@@ -211,12 +211,24 @@ pylith::topology::FieldOps::getSubfieldNamesDomain(const pylith::topology::Field
         err = PetscDSGetDiscretization(fieldDS, iField, &discretization);PYLITH_CHECK_ERROR(err);
         PylithInt fieldIndex = -1;
         err = PetscDSGetFieldIndex(fieldDS, discretization, &fieldIndex);PYLITH_CHECK_ERROR(err);
-        assert(fieldIndex >= 0 && fieldIndex < subfieldNames.size());
+        assert(fieldIndex >= 0 && size_t(fieldIndex) < subfieldNames.size());
         subfieldNamesDomain[iField] = subfieldNames[fieldIndex];
     } // for
 
     PYLITH_METHOD_RETURN(subfieldNamesDomain);
 } // getSubfieldNamesDomain
+
+
+// ------------------------------------------------------------------------------------------------
+// Get basis order of field.
+int
+pylith::topology::FieldOps::getBasisOrder(const PetscDM dm) {
+    PYLITH_METHOD_BEGIN;
+
+    int basisOrder = -1;
+
+    PYLITH_METHOD_RETURN(basisOrder);
+} // getBasisOrder
 
 
 // ----------------------------------------------------------------------
