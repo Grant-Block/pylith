@@ -362,41 +362,6 @@ pylith::topology::Field::view(const char* label,
 
 #if 0
 // ------------------------------------------------------------------------------------------------
-// Create PETSc vector scatter for field. This is used to transfer
-// information from the "global" PETSc vector view to the "local"
-// PETSc section view. The PETSc vector is a global vector.
-void
-pylith::topology::Field::createScatter(const Mesh& mesh,
-                                       const char* context) {
-    PYLITH_METHOD_BEGIN;
-
-    assert(context);
-    PetscErrorCode err;
-    const char* name = NULL;
-
-    const bool createScatterOk = true;
-    ScatterInfo& sinfo = _getScatter(context, createScatterOk);
-    if (sinfo.dm) {
-        assert(sinfo.vector);
-        PYLITH_METHOD_END;
-    } // if
-
-    err = DMDestroy(&sinfo.dm);PYLITH_CHECK_ERROR(err);
-    sinfo.dm = _dm;
-    err = PetscObjectReference((PetscObject) sinfo.dm);PYLITH_CHECK_ERROR(err);
-    err = PetscObjectGetName((PetscObject)_dm, &name);PYLITH_CHECK_ERROR(err);
-    const std::string dmName = std::string(name) + std::string("_") + std::string(context);
-    err = PetscObjectSetName((PetscObject)sinfo.dm, dmName.c_str());PYLITH_CHECK_ERROR(err);
-
-    err = VecDestroy(&sinfo.vector);PYLITH_CHECK_ERROR(err);
-    err = DMCreateGlobalVector(_dm, &sinfo.vector);PYLITH_CHECK_ERROR(err);
-    err = PetscObjectSetName((PetscObject)sinfo.vector, _label.c_str());PYLITH_CHECK_ERROR(err);
-
-    PYLITH_METHOD_END;
-} // createScatter
-
-
-// ------------------------------------------------------------------------------------------------
 // Create PETSc vector scatter for field with constraints omitted.
 // This is used to transfer information from the "global" PETSc vector
 // view to the "local" PETSc section view. The PETSc vector is a global
@@ -405,18 +370,6 @@ void
 pylith::topology::Field::createScatterNoConstraints(const Mesh& mesh,
                                                     const char* context) {
     PYLITH_METHOD_BEGIN;
-
-    assert(context);
-    PetscErrorCode err;
-
-    const bool createScatterOk = true;
-    ScatterInfo& sinfo = _getScatter(context, createScatterOk);
-
-    // Only create if scatter and scatterVec do not alreay exist.
-    if (sinfo.dm) {
-        assert(sinfo.vector);
-        PYLITH_METHOD_END;
-    } // if
 
     PetscDM dm = mesh.dmMesh();assert(dm);
     PetscSection section = NULL, newSection = NULL, gsection = NULL, subSection = NULL;

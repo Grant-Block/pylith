@@ -21,6 +21,8 @@
 #include "OutputSubfield.hh" // Implementation of class methods
 
 #include "pylith/topology/Field.hh" // USES Field
+#include "pylith/topology/FieldOps.hh" // USES FieldOps
+#include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/meshio/FieldFilter.hh" // USES FieldFilter
 
 #include "pylith/utils/error.hh" // USES PYLITH_CHECK_ERROR
@@ -55,15 +57,25 @@ pylith::meshio::OutputSubfield::deallocate(void) {
 pylith::meshio::OutputSubfield*
 pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
                                        const char* name,
-                                       const pylith::meshio::FieldFilter* filter) {
+                                       const pylith::meshio::FieldFilter* filter,
+                                       const pylith::topology::Mesh* submesh) {
     const pylith::topology::Field::SubfieldInfo& info = field.subfieldInfo(name);
 
-    PetscDM dm = NULL;
-    PetscIS is = NULL;
-    PetscErrorCode err = DMCreateSubDM(field.dmMesh(), 1, &info.index, &is, &dm);PYLITH_CHECK_ERROR(err);
-    err = PetscObjectSetName((PetscObject) dm, name);PYLITH_CHECK_ERROR(err);
+    PetscDM subfieldDM = NULL;
+    PetscIS subfieldIS = NULL;
+    PetscErrorCode err;
+    if (!submesh) {
+        err = DMCreateSubDM(field.dmMesh(), 1, &info.index, &subfieldIS, &subfieldDM);PYLITH_CHECK_ERROR(err);
+    } else {
+        subfieldDM = pylith::topology::FieldOps::createSubdofDM(field.dmMesh(), submesh->dmMesh(), info.index);
+        subfieldIS = pylith::topology::FieldOps::createSubdofIS(field, name, *submesh);
+    } // if/else
+    assert(subfieldDM);
+    assert(subfieldIS);
+    err = PetscObjectSetName((PetscObject)subfieldDM, name);PYLITH_CHECK_ERROR(err);
 
-    OutputSubfield* subfield = new OutputSubfield(info.description, info.fe, dm, is, filter);assert(subfield);
+    OutputSubfield* subfield = new OutputSubfield(info.description, info.fe, subfieldDM, subfieldIS,
+                                                  filter);assert(subfield);
     return subfield;
 }
 

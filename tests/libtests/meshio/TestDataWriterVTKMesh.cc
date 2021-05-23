@@ -229,11 +229,10 @@ pylith::meshio::TestDataWriterVTKMesh::testWriteCellField(void) {
     CPPUNIT_ASSERT(_mesh);
     CPPUNIT_ASSERT(_data);
 
-    DataWriterVTK writer;
-
     pylith::topology::Field cellField(*_mesh);
     _createCellField(&cellField);
 
+    DataWriterVTK writer;
     writer.filename(_data->cellFilename);
     writer.timeFormat(_data->timeFormat);
 
@@ -256,7 +255,7 @@ pylith::meshio::TestDataWriterVTKMesh::testWriteCellField(void) {
     } // for
     writer.closeTimeStep();
     writer.close();
-    CPPUNIT_ASSERT_EQUAL(false, writer._wroteCellHeader);
+    CPPUNIT_ASSERT_EQUAL(false, writer._wroteVertexHeader);
     CPPUNIT_ASSERT_EQUAL(false, writer._wroteCellHeader);
 
     checkFile(_data->cellFilename, t, _data->timeFormat);

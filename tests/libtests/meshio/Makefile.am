@@ -48,12 +48,12 @@ test_vtk_SOURCES = \
 	TestDataWriterMesh.cc \
 	TestDataWriterVTK.cc \
 	TestDataWriterVTKMesh.cc \
-	TestDataWriterVTKMesh_Cases.cc
+	TestDataWriterVTKMesh_Cases.cc \
+	TestDataWriterMaterial.cc \
+	TestDataWriterVTKMaterial.cc \
+	TestDataWriterVTKMaterial_Cases.cc
 
-#	TestDataWriterMaterial.cc \
 #	TestDataWriterSubmesh.cc \
-#	TestDataWriterVTKMaterial.cc \
-#	TestDataWriterVTKMaterial_Cases.cc \
 #	TestDataWriterVTKSubmesh.cc \
 #	TestDataWriterVTKSubmesh_Cases.cc
 

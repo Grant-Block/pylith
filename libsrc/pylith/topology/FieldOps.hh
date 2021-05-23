@@ -97,6 +97,15 @@ public:
     void checkDiscretization(const pylith::topology::Field& target,
                              const pylith::topology::Field& auxiliary);
 
+    /** Get basis order for field.
+     *
+     * @warning Throws std::logic_error() if PetscDS contains more than one subfield.
+     *
+     * @param[in] dm PETSc DM associated with field.
+     */
+    static
+    int getBasisOrder(const PetscDM dm);
+
     /** Get names of subfields extending over the entire domain.
      *
      * Excludes subfields extending over only a subset of the domain, like the fault Lagrange multiplier subfield.
@@ -107,14 +116,30 @@ public:
     static
     pylith::string_vector getSubfieldNamesDomain(const pylith::topology::Field& field);
 
-    /** Get basis order for field.
+    /** Create PETSc DM for submesh (subdomain or lower dimension mesh).
      *
-     * @warning Throws std::logic_error() if PetscDS contains more than one subfield.
+     * @param[in] domainDM PETSc DM for domain.
+     * @param[in] submeshDM PETSc DM for subdomain or lower dimension domain.
+     * @param[in] subfieldIndex Index of subfield in field.
      *
-     * @param[in] dm PETSc DM associated with field.
+     * @returns PETSc DM.
      */
     static
-    int getBasisOrder(const PetscDM dm);
+    PetscDM createSubdofDM(const PetscDM domainDM,
+                           const PetscDM submeshDM,
+                           const int subfieldIndex);
+
+    /** Get PETSc DM and IS for extracting values from global vector to submesh vector.
+     *
+     * @param[in] field Field containing subfield.
+     * @param[in] subfieldName Name of subfield to extract.
+     * @param[in] submesh Mesh for subdomain.
+     * @returns PETSc IS for extracting values.
+     */
+    static
+    PetscIS createSubdofIS(const pylith::topology::Field& field,
+                           const char* subfieldName,
+                           const pylith::topology::Mesh& submesh);
 
     /** Check to see if fields have the same subfields and match in size.
      *

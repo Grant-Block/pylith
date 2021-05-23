@@ -45,11 +45,13 @@ public:
      * @param[in] field Field with subfields.
      * @param[in] name Name of subfield that will be extracted.
      * @param[in] filter Filter to apply to subfield.
+     * @param[in] submesh Submesh for subfield.
      */
     static
     OutputSubfield* create(const pylith::topology::Field& field,
                            const char* name,
-                           const pylith::meshio::FieldFilter* filter);
+                           const pylith::meshio::FieldFilter* filter,
+                           const pylith::topology::Mesh* submesh=NULL);
 
     /// Destructor
     ~OutputSubfield(void);

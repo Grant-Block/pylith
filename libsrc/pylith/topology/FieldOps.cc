@@ -22,6 +22,8 @@
 #include "pylith/topology/Field.hh" // USES Field
 #include "pylith/topology/FieldQuery.hh" // USES FieldQuery
 #include "pylith/topology/Mesh.hh" // USES Mesh
+#include "pylith/topology/MeshOps.hh" // USES MeshOps
+#include "pylith/topology/VisitorSubmesh.hh" // USES VecVisitorSubmesh
 #include "pylith/utils/error.hh" // USES PYLITH_CHECK_ERROR
 
 #include "spatialdata/spatialdb/SpatialDB.hh" // USES SpatialDB
@@ -36,7 +38,7 @@ pylith::topology::FieldOps::deallocate(void) {
 }
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Create PetscFE object for discretization.
 PetscFE
 pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
@@ -132,7 +134,7 @@ pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
 } // createFE
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Check compatibility of discretization of subfields in the auxiliary field and target field.
 void
 pylith::topology::FieldOps::checkDiscretization(const pylith::topology::Field& target,
@@ -192,7 +194,20 @@ pylith::topology::FieldOps::checkDiscretization(const pylith::topology::Field& t
 } // checkDiscretization
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Get basis order of field.
+int
+pylith::topology::FieldOps::getBasisOrder(const PetscDM dm) {
+    PYLITH_METHOD_BEGIN;
+
+    int basisOrder = -1;
+    assert(0); // :TODO: @brad
+
+    PYLITH_METHOD_RETURN(basisOrder);
+} // getBasisOrder
+
+
+// ------------------------------------------------------------------------------------------------
 // Get names of subfields extending over entire domain.
 pylith::string_vector
 pylith::topology::FieldOps::getSubfieldNamesDomain(const pylith::topology::Field& field) {
@@ -219,19 +234,79 @@ pylith::topology::FieldOps::getSubfieldNamesDomain(const pylith::topology::Field
 } // getSubfieldNamesDomain
 
 
+/** Create PETSc DM for submesh (subdomain or lower dimension mesh).
+ *
+ * @param[in] domainDM PETSc DM for domain.
+ * @param[in] submeshDM PETSc DM for subdomain or lower dimension domain.
+ *
+ * @returns PETSc DM.
+ */
 // ------------------------------------------------------------------------------------------------
-// Get basis order of field.
-int
-pylith::topology::FieldOps::getBasisOrder(const PetscDM dm) {
+PetscDM
+pylith::topology::FieldOps::createSubdofDM(const PetscDM domainDM,
+                                           const PetscDM submeshDM,
+                                           const int subfieldIndex) {
+    PYLITH_METHOD_BEGIN;
+    assert(domainDM);
+    assert(submeshDM);
+    PetscErrorCode err;
+
+    PetscDM subdofDM = NULL;
+    err = DMClone(submeshDM, &subdofDM);PYLITH_CHECK_ERROR(err);
+    err = DMCopyDisc(domainDM, subdofDM);PYLITH_CHECK_ERROR(err);
+
+    PetscDM subfieldDM = NULL;
+    err = DMCreateSubDM(subdofDM, 1, &subfieldIndex, NULL, &subfieldDM);PYLITH_CHECK_ERROR(err);
+    err = DMDestroy(&subdofDM);PYLITH_CHECK_ERROR(err);
+
+    PYLITH_METHOD_RETURN(subfieldDM);
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Get PETSc DM and IS for scattering values from global vector to submesh vector.
+PetscIS
+pylith::topology::FieldOps::createSubdofIS(const pylith::topology::Field& field,
+                                           const char* subfieldName,
+                                           const pylith::topology::Mesh& submesh) {
     PYLITH_METHOD_BEGIN;
 
-    int basisOrder = -1;
+    const pylith::topology::Field::SubfieldInfo& sinfo = field.subfieldInfo(subfieldName);
+    const int subfieldIndex = sinfo.index;
 
-    PYLITH_METHOD_RETURN(basisOrder);
-} // getBasisOrder
+    pylith::topology::SubmeshIS submeshIS(submesh);
+    pylith::topology::VecVisitorSubmesh fieldVisitor(field, submeshIS);
+
+    const PetscSection submeshSection = fieldVisitor.petscSection();
+    PetscInt pStart = 0, pEnd = 0;
+    PetscErrorCode err;
+    err = PetscSectionGetChart(submeshSection, &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
+
+    // Count number of degrees of freedom of subfield in submesh.
+    PetscInt subdofSize = 0;
+    for (PetscInt point = pStart; point < pEnd; ++point) {
+        subdofSize += fieldVisitor.sectionSubfieldDof(point, subfieldIndex);
+    } // for
+
+    // Create array of indices (index set) of degrees of freedom of subfield in submesh.
+    PetscInt* subdofIndices = NULL;
+    err = PetscMalloc1(subdofSize*sizeof(PetscInt), &subdofIndices);PYLITH_CHECK_ERROR(err);
+    for (PetscInt point = pStart, iSubDOF = 0; point < pEnd; ++point) {
+        const PetscInt offset = fieldVisitor.sectionSubfieldOffset(point, subfieldIndex);
+        const PetscInt numDOF = fieldVisitor.sectionSubfieldDof(point, subfieldIndex);
+        for (PetscInt iDOF = 0; iDOF < numDOF; ++iDOF) {
+            subdofIndices[iSubDOF++] = offset + iDOF;
+        } // for
+    } // for
+
+    PetscIS subdofIS = NULL;
+    err = ISCreateGeneral(field.mesh().comm(), subdofSize, subdofIndices, PETSC_OWN_POINTER,
+                          &subdofIS);PYLITH_CHECK_ERROR(err);
+    PYLITH_METHOD_RETURN(subdofIS);
+} // createSubdofIS
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Check to see if fields have the same subfields and match in size.
 bool
 pylith::topology::FieldOps::layoutsMatch(const pylith::topology::Field& fieldA,
