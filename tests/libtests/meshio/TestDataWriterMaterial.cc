@@ -224,11 +224,11 @@ pylith::meshio::TestDataWriterMaterial::_setDataQuad(void) {
     data->vertexNumDOF = vertexNumDOF;
     static const PylithScalar vertexValues[vertexNumPoints*vertexNumDOF] = {
         2.1,    1.1,  2.2,   1.1, 1.2, 1.3,    1.2,  2.3,
-        3.2,    3.3,  4.4,   2.1, 2.2, 3.3,    3.4,  4.5,
-        4.3,    5.5,  6.6,   3.1, 3.2, 4.3,    5.6,  6.7,
-        5.4,    7.7,  8.8,   4.1, 4.2, 5.3,    7.8,  8.9,
-        6.5,    9.9, 10.1,   5.1, 5.2, 6.3,    9.8,  7.6,
-        7.6,   11.2, 12.3,   6.1, 6.2, 7.3,    6.5,  5.4,
+        3.2,    3.3,  4.4,   2.1, 2.2, 2.3,    3.4,  4.5,
+        4.3,    5.5,  6.6,   3.1, 3.2, 3.3,    5.6,  6.7,
+        5.4,    7.7,  8.8,   4.1, 4.2, 4.3,    7.8,  8.9,
+        6.5,    9.9, 10.1,   5.1, 5.2, 5.3,    9.8,  7.6,
+        7.6,   11.2, 12.3,   6.1, 6.2, 6.3,    6.5,  5.4,
     };
     data->vertexValues = const_cast<PylithScalar*>(vertexValues);
 

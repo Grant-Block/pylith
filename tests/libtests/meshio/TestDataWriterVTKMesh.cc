@@ -22,7 +22,6 @@
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/Field.hh" // USES Field
-#include "pylith/topology/Fields.hh" // USES Fields
 #include "pylith/meshio/MeshIOAscii.hh" // USES MeshIOAscii
 #include "pylith/meshio/DataWriterVTK.hh" // USES DataWriterVTK
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield

@@ -46,16 +46,16 @@ test_vtk_SOURCES = \
 	FieldFactory.cc \
 	TestDataWriter.cc \
 	TestDataWriterMesh.cc \
+	TestDataWriterMaterial.cc \
+	TestDataWriterSubmesh.cc \
 	TestDataWriterVTK.cc \
 	TestDataWriterVTKMesh.cc \
 	TestDataWriterVTKMesh_Cases.cc \
-	TestDataWriterMaterial.cc \
 	TestDataWriterVTKMaterial.cc \
-	TestDataWriterVTKMaterial_Cases.cc
+	TestDataWriterVTKMaterial_Cases.cc \
+	TestDataWriterVTKSubmesh.cc \
+	TestDataWriterVTKSubmesh_Cases.cc
 
-#	TestDataWriterSubmesh.cc \
-#	TestDataWriterVTKSubmesh.cc \
-#	TestDataWriterVTKSubmesh_Cases.cc
 
 # :TODO: @brad
 # TestDataWriterPoints.cc \
