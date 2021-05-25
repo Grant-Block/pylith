@@ -79,16 +79,15 @@ private:
 
     /** Setup interpolatior.
      *
-     * @param[in] mesh Finite-element mesh of domain.
+     * @param[in] solution Solution field.
      */
-    void _setupInterpolator(const pylith::topology::Mesh& mesh);
+    void _setupInterpolator(const pylith::topology::Field& solution);
 
-    /** Interpolate field.
+    /** Interpolate solution field.
      *
-     * @param[in] field Field to interpolate;
-     * @returns Interpolated field.
+     * @param[in] solution Solution field to interpolate.
      */
-    pylith::topology::Field* _interpolateField(const pylith::topology::Field& field);
+    void _interpolateField(const pylith::topology::Field& solution);
 
     /// Write dataset with names of points to file.
     void _writePointNames(void);
@@ -99,6 +98,7 @@ private:
     pylith::scalar_array _pointCoords; ///< Array of point coordinates.
     pylith::string_vector _pointNames; ///< Array of point names.
     pylith::topology::Mesh* _pointsMesh; ///< Mesh for points (no cells).
+    pylith::topology::Field* _pointsSoln; ///< Solution field at points.
     DMInterpolationInfo _interpolator; ///< Field interpolator.
 
     // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////

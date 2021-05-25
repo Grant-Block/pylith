@@ -447,6 +447,7 @@ pylith::problems::TimeDependent::poststep(void) {
     // Update PyLith view of the solution.
     assert(_solution);
     _solution->scatterVectorToLocal(solutionVec);
+    _solution->scatterLocalToOutput();
 
     // Update integrators.
     const size_t numIntegrators = _integrators.size();

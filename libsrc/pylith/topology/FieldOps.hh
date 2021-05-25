@@ -116,20 +116,41 @@ public:
     static
     pylith::string_vector getSubfieldNamesDomain(const pylith::topology::Field& field);
 
+    /** Create PETSc DM for a subfield over the domain.
+     *
+     * @param[in] domainDM PETSc DM for domain.
+     * @param[in] subfieldIndex Index of subfield in field.
+     *
+     * @returns PETSc DM for subfield.
+     */
+    static
+    PetscDM createSubfieldDM(const PetscDM domainDM,
+                             const int subfieldIndex);
+
     /** Create PETSc DM for submesh (subdomain or lower dimension mesh).
      *
      * @param[in] domainDM PETSc DM for domain.
      * @param[in] submeshDM PETSc DM for subdomain or lower dimension domain.
      * @param[in] subfieldIndex Index of subfield in field.
      *
-     * @returns PETSc DM.
+     * @returns PETSc DM for subfield over submesh.
      */
     static
     PetscDM createSubdofDM(const PetscDM domainDM,
                            const PetscDM submeshDM,
                            const int subfieldIndex);
 
-    /** Get PETSc DM and IS for extracting values from global vector to submesh vector.
+    /** Get PETSc IS for extracting values from global vector to subfield vector.
+     *
+     * @param[in] field Field containing subfield.
+     * @param[in] subfieldName Name of subfield to extract.
+     * @returns PETSc IS for extracting values.
+     */
+    static
+    PetscIS createSubfieldIS(const pylith::topology::Field& field,
+                             const char* subfieldName);
+
+    /** Get PETSc IS for extracting values from global vector to submesh vector.
      *
      * @param[in] field Field containing subfield.
      * @param[in] subfieldName Name of subfield to extract.

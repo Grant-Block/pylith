@@ -65,7 +65,16 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
     PetscIS subfieldIS = NULL;
     PetscErrorCode err;
     if (!submesh) {
-        err = DMCreateSubDM(field.dmMesh(), 1, &info.index, &subfieldIS, &subfieldDM);PYLITH_CHECK_ERROR(err);
+        PetscBool hasConstraints = PETSC_FALSE;
+        PetscBool ghasConstraints = PETSC_FALSE;
+        err = PetscSectionHasConstraints(field.localSection(), &hasConstraints);PYLITH_CHECK_ERROR(err);
+        MPI_Allreduce(&hasConstraints, &ghasConstraints, 1, MPIU_BOOL, MPI_LOR, field.mesh().comm());
+        if (!ghasConstraints) {
+            err = DMCreateSubDM(field.dmMesh(), 1, &info.index, &subfieldIS, &subfieldDM);PYLITH_CHECK_ERROR(err);
+        } else {
+            subfieldDM = pylith::topology::FieldOps::createSubfieldDM(field.dmMesh(), info.index);
+            subfieldIS = pylith::topology::FieldOps::createSubfieldIS(field, name);
+        } // if/else
     } else {
         subfieldDM = pylith::topology::FieldOps::createSubdofDM(field.dmMesh(), submesh->dmMesh(), info.index);
         subfieldIS = pylith::topology::FieldOps::createSubdofIS(field, name, *submesh);

@@ -24,42 +24,45 @@
 
 namespace pylith {
     namespace meshio {
-
         class pylith::meshio::FieldFilter : public pylith::utils::PyreComponent {
+            // PUBLIC METHODS ///////////////////////////////////////////////////////
+public:
 
-	  // PUBLIC METHODS ///////////////////////////////////////////////////////
-	public:
+            /// Constructor
+            FieldFilter(void);
 
-	  /// Constructor
-	  FieldFilter(void);
-      
-	  /// Destructor
-	  virtual ~FieldFilter(void);
-      
-	  /// Deallocate PETSc and local data structures.
-	  virtual
-	  void deallocate(void);
-      
-	  /** Create copy of filter.
-	   *
-	   * @returns Copy of filter.
-	   */
-	  virtual
-	  FieldFilter* clone(void) const = 0;
-      
-	  /** Filter field.
-	   *
-	   * @param fieldIn Field to filter.
-	   * @returns Field after applying filter.
-	   */
-	  virtual
-	  pylith::topology::Field* filter(pylith::topology::Field* fieldIn) = 0;
-      
-	}; // FieldFilter
-    
-    
+            /// Destructor
+            virtual ~FieldFilter(void);
+
+            /// Deallocate PETSc and local data structures.
+            virtual
+            void deallocate(void);
+
+            /** Create DM associated with filtered field.
+             *
+             * @param[in] dm PETSc DM of unfiltered field.
+             * @param[in] description Description of input field.
+             * @param[in] discretization Discretization of input field.
+             */
+            virtual
+            PetscDM createDM(PetscDM dm,
+                             const pylith::topology::FieldBase::Description& description,
+                             const pylith::topology::FieldBase::Discretization& discretization) const = 0;
+
+            /** Apply filter to global PETSc vector.
+             *
+             * @param[out] vectorOut Filtered global PETSc vector.
+             * @param[in] dmOut PETSc DM associated with filtered global PETSc vector.
+             * @param[in] vectorIn PETSc global vector to filter.
+             */
+            virtual
+            void apply(PetscVec* vectorOut,
+                       PetscDM dmOut,
+                       PetscVec vectorIn) const = 0;
+
+        }; // FieldFilter
+
     } // meshio
 } // pylith
 
-
-// End of file 
+// End of file

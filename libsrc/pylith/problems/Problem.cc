@@ -355,6 +355,7 @@ pylith::problems::Problem::initialize(void) {
 
     _solution->allocate();
     _solution->createGlobalVector();
+    _solution->createOutputVector();
 
     pythia::journal::debug_t debug(PyreComponent::getName());
     if (debug.state()) {

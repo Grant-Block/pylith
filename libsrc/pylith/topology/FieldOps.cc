@@ -23,6 +23,7 @@
 #include "pylith/topology/FieldQuery.hh" // USES FieldQuery
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/MeshOps.hh" // USES MeshOps
+#include "pylith/topology/VisitorMesh.hh" // USES VecVisitorMesh
 #include "pylith/topology/VisitorSubmesh.hh" // USES VecVisitorSubmesh
 #include "pylith/utils/error.hh" // USES PYLITH_CHECK_ERROR
 
@@ -200,8 +201,13 @@ int
 pylith::topology::FieldOps::getBasisOrder(const PetscDM dm) {
     PYLITH_METHOD_BEGIN;
 
-    int basisOrder = -1;
-    assert(0); // :TODO: @brad
+    PetscInt basisOrder = -1;
+    PetscFE fe = NULL;
+    PetscSpace space = NULL;
+    PetscErrorCode err;
+    err = DMGetField(dm, 0, NULL, (PetscObject*)&fe);PYLITH_CHECK_ERROR(err);
+    err = PetscFEGetBasisSpace(fe, &space);PYLITH_CHECK_ERROR(err);
+    err = PetscSpaceGetDegree(space, &basisOrder, NULL);PYLITH_CHECK_ERROR(err);
 
     PYLITH_METHOD_RETURN(basisOrder);
 } // getBasisOrder
@@ -234,14 +240,30 @@ pylith::topology::FieldOps::getSubfieldNamesDomain(const pylith::topology::Field
 } // getSubfieldNamesDomain
 
 
-/** Create PETSc DM for submesh (subdomain or lower dimension mesh).
- *
- * @param[in] domainDM PETSc DM for domain.
- * @param[in] submeshDM PETSc DM for subdomain or lower dimension domain.
- *
- * @returns PETSc DM.
- */
 // ------------------------------------------------------------------------------------------------
+// Create PETSc DM for a subfield over the domain.
+PetscDM
+pylith::topology::FieldOps::createSubfieldDM(const PetscDM domainDM,
+                                             const int subfieldIndex) {
+    PYLITH_METHOD_BEGIN;
+    assert(domainDM);
+
+    PetscErrorCode err;
+    PetscDM subDM = NULL;
+    err = DMCreateSubDM(domainDM, 1, &subfieldIndex, NULL, &subDM);PYLITH_CHECK_ERROR(err);
+
+    PetscDM subfieldDM = NULL;
+    err = DMGetOutputDM(subDM, &subfieldDM);PYLITH_CHECK_ERROR(err);
+    err = PetscObjectReference((PetscObject)subfieldDM);PYLITH_CHECK_ERROR(err);
+    err = DMDestroy(&subDM);PYLITH_CHECK_ERROR(err);
+    err = DMCreateDS(subfieldDM);PYLITH_CHECK_ERROR(err);
+
+    PYLITH_METHOD_RETURN(subfieldDM);
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Create PETSc DM for submesh (subdomain or lower dimension mesh).
 PetscDM
 pylith::topology::FieldOps::createSubdofDM(const PetscDM domainDM,
                                            const PetscDM submeshDM,
@@ -264,6 +286,43 @@ pylith::topology::FieldOps::createSubdofDM(const PetscDM domainDM,
 
 
 // ------------------------------------------------------------------------------------------------
+// Get PETSc IS for extracting values from global vector to subfield vector.
+PetscIS
+pylith::topology::FieldOps::createSubfieldIS(const pylith::topology::Field& field,
+                                             const char* subfieldName) {
+    PYLITH_METHOD_BEGIN;
+
+    pylith::topology::VecVisitorMesh fieldVisitor(field, subfieldName);
+
+    PetscInt pStart = 0, pEnd = 0;
+    PetscErrorCode err;
+    err = PetscSectionGetChart(fieldVisitor.localSection(), &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
+
+    // Count number of degrees of freedom of subfield in submesh.
+    PetscInt subfieldSize = 0;
+    for (PetscInt point = pStart; point < pEnd; ++point) {
+        subfieldSize += fieldVisitor.sectionDof(point);
+    } // for
+
+    // Create array of indices (index set) of degrees of freedom of subfield in submesh.
+    PetscInt* subfieldIndices = NULL;
+    err = PetscMalloc1(subfieldSize*sizeof(PetscInt), &subfieldIndices);PYLITH_CHECK_ERROR(err);
+    for (PetscInt point = pStart, iSubDOF = 0; point < pEnd; ++point) {
+        const PetscInt offset = fieldVisitor.sectionOffset(point);
+        const PetscInt numDOF = fieldVisitor.sectionDof(point);
+        for (PetscInt iDOF = 0; iDOF < numDOF; ++iDOF) {
+            subfieldIndices[iSubDOF++] = offset + iDOF;
+        } // for
+    } // for
+
+    PetscIS subfieldIS = NULL;
+    err = ISCreateGeneral(field.mesh().comm(), subfieldSize, subfieldIndices, PETSC_OWN_POINTER,
+                          &subfieldIS);PYLITH_CHECK_ERROR(err);
+    PYLITH_METHOD_RETURN(subfieldIS);
+}
+
+
+// ------------------------------------------------------------------------------------------------
 // Get PETSc DM and IS for scattering values from global vector to submesh vector.
 PetscIS
 pylith::topology::FieldOps::createSubdofIS(const pylith::topology::Field& field,
@@ -281,10 +340,17 @@ pylith::topology::FieldOps::createSubdofIS(const pylith::topology::Field& field,
     PetscInt pStart = 0, pEnd = 0;
     PetscErrorCode err;
     err = PetscSectionGetChart(submeshSection, &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
+    PetscInt pMin = 0;
+    if (submesh.dimension() < field.getSpaceDim()) {
+        // Exclude domain cells (height 0)
+        PetscInt cEnd = 0;
+        err = DMPlexGetHeightStratum(submesh.dmMesh(), 0, NULL, &cEnd);PYLITH_CHECK_ERROR(err);
+        pMin = cEnd;
+    } // if
 
     // Count number of degrees of freedom of subfield in submesh.
     PetscInt subdofSize = 0;
-    for (PetscInt point = pStart; point < pEnd; ++point) {
+    for (PetscInt point = pMin; point < pEnd; ++point) {
         subdofSize += fieldVisitor.sectionSubfieldDof(point, subfieldIndex);
     } // for
 

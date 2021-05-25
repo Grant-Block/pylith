@@ -36,27 +36,37 @@ namespace pylith {
 	  /// Destructor
 	  ~FieldFilterProject(void);
 	  
-	    /** Create copy of filter.
-	     *
-	     * @returns Copy of filter.
-	     */
-	    FieldFilter* clone(void) const;
-	    
-	    /// Deallocate PETSc and local data structures.
-	    void deallocate(void);
-	    
-	    /** Set basis order for projected field.
-	     *
-	     * @param[in] value Basis order.
-	     */
-	    void basisOrder(const int value);
-	    
-	    /** Filter vertex field.
-	     *
-	     * @returns Field after applying filter.
-	     * @param fieldIn Field to filter.
-	     */
-	    pylith::topology::Field* filter(pylith::topology::Field* fieldIn);
+    /// Constructor
+    FieldFilterProject(void);
+
+    /// Destructor
+    ~FieldFilterProject(void);
+
+    /** Set basis order for projected field.
+     *
+     * @param[in] value Basis order.
+     */
+    void setBasisOrder(const int value);
+
+    /** Create DM associated with filtered field.
+     *
+     * @param[in] dm PETSc DM of unfiltered field.
+     * @param[in] description Description of input field.
+     * @param[in] discretization Discretization of input field.
+     */
+    PetscDM createDM(PetscDM dm,
+                     const pylith::topology::FieldBase::Description& description,
+                     const pylith::topology::FieldBase::Discretization& discretization) const;
+
+    /** Apply filter to global PETSc vector.
+     *
+     * @param[out] vectorOut Filtered global PETSc vector.
+     * @param[in] dmOut PETSc DM associated with filtered global PETSc vector.
+     * @param[in] vectorIn PETSc global vector to filter.
+     */
+    void apply(PetscVec* vectorOut,
+               PetscDM dmOut,
+               PetscVec vectorIn) const;
 	    
 	}; // FieldFilterProject
       

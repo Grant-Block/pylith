@@ -86,7 +86,7 @@ public:
      *
      * @param mesh Finite-element mesh.
      */
-    Field(const Mesh& mesh);
+    Field(const pylith::topology::Mesh& mesh);
 
     /** Constructor with field to use for layout.
      *
@@ -106,7 +106,7 @@ public:
      *
      * @returns Finite-element mesh.
      */
-    const Mesh& mesh(void) const;
+    const pylith::topology::Mesh& mesh(void) const;
 
     /** Get PETSc DM associated with field.
      *

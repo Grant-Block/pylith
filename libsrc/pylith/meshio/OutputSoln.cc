@@ -214,44 +214,6 @@ pylith::meshio::OutputSoln::_writeSolnStep(const PylithReal t,
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Append finite-element vertex field to file.
-void
-pylith::meshio::OutputSoln::_appendField(const PylithReal t,
-                                         pylith::topology::Field* field,
-                                         const pylith::topology::Mesh& mesh) {
-#if 0
-    PYLITH_METHOD_BEGIN;
-    PYLITH_COMPONENT_DEBUG("OutputSoln::appendField(t="<<t<<", field="<<typeid(field).name()<<", mesh="<<typeid(mesh).name()<<")");
-
-    assert(field);
-
-    pylith::topology::Field* fieldFiltered = _fieldFilter->filter(field);
-    pylith::topology::Field* fieldDimensioned = _dimensionField(fieldFiltered);assert(fieldDimensioned);
-
-    const int basisOrder = _getBasisOrder(*fieldDimensioned);
-    switch (basisOrder) {
-    case 0:
-        _writer->writeCellField(t, *fieldDimensioned);
-        break;
-
-    case 1:
-        _writer->writeVertexField(t, *fieldDimensioned, mesh);
-        break;
-
-    default:
-        PYLITH_COMPONENT_ERROR(
-            "Unsupported basis order ("
-                << basisOrder <<") for output. Use FieldFilterProject with basis order of 0 or 1. Skipping output of '"
-                << field->getLabel() << "' field."
-            );
-    } // switch
-
-    PYLITH_METHOD_END;
-#endif
-} // _appendField
-
-
-// ---------------------------------------------------------------------------------------------------------------------
 // Get names of subfields for output.
 pylith::string_vector
 pylith::meshio::OutputSoln::_expandSubfieldNames(const pylith::topology::Field& solution) const {

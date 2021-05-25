@@ -24,7 +24,7 @@
 #include "pylith/meshio/MeshBuilder.hh" // USES MeshBuilder
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
-#include "pylith/topology/Fields.hh" // USES Fields
+#include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 #include "pylith/topology/MeshOps.hh" // USES MeshOps::nondimensionalize()
 #include "pylith/topology/Stratum.hh" // USES Stratum
 #include "pylith/topology/VisitorMesh.hh" // USES VecVisitorMesh
@@ -35,10 +35,13 @@
 #include "spatialdata/geocoords/Converter.hh" // USES Converter
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
 
+#include <cassert> // USES assert()
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Constructor
 pylith::meshio::OutputSolnPoints::OutputSolnPoints(void) :
     _pointsMesh(NULL),
+    _pointsSoln(NULL),
     _interpolator(NULL) {
     PyreComponent::setName("outputsolnpoints");
 } // constructor
@@ -62,6 +65,7 @@ pylith::meshio::OutputSolnPoints::deallocate(void) {
     PetscErrorCode err = DMInterpolationDestroy(&_interpolator);PYLITH_CHECK_ERROR(err);
 
     delete _pointsMesh;_pointsMesh = NULL;
+    delete _pointsSoln;_pointsSoln = NULL;
 
     PYLITH_METHOD_END;
 } // deallocate
@@ -107,28 +111,28 @@ pylith::meshio::OutputSolnPoints::_writeSolnStep(const PylithReal t,
     PYLITH_COMPONENT_DEBUG("_writeSolnStep(t="<<t<<", tindex="<<tindex<<", solution="<<solution.getLabel()<<")");
 
     if (!_interpolator) {
-        _setupInterpolator(solution.mesh());
+        _setupInterpolator(solution);
     } // if
-
-    const pylith::string_vector& subfieldNames = _expandSubfieldNames(solution);
-
-    pylith::topology::Field* solutionInterp = _interpolateField(solution);
+    _interpolateField(solution);
+    assert(_pointsSoln);
+    _pointsSoln->scatterLocalToOutput();
+    const PetscVec solutionVector = _pointsSoln->outputVector();assert(solutionVector);
 
     assert(_pointsMesh);
     const bool writePointNames = !_writer->isOpen();
     _openSolnStep(t, *_pointsMesh);
     if (writePointNames) { _writePointNames(); }
 
+    const pylith::string_vector& subfieldNames = _expandSubfieldNames(solution);
     const size_t numSubfieldNames = subfieldNames.size();
     for (size_t iField = 0; iField < numSubfieldNames; iField++) {
-        if (!solutionInterp->hasSubfield(subfieldNames[iField].c_str())) {
-            std::ostringstream msg;
-            msg << "Internal Error: Could not find subfield '" << subfieldNames[iField] << "' in interpolated solution for output.";
-            throw std::runtime_error(msg.str());
-        } // if
+        assert(solution.hasSubfield(subfieldNames[iField].c_str()));
 
-        // :TODO:
-        // _appendField(t, fieldBuffer, *_pointsMesh);
+        OutputSubfield* subfield = NULL;
+        subfield = OutputObserver::_getSubfield(*_pointsSoln, subfieldNames[iField].c_str(), _pointsMesh);assert(subfield);
+        subfield->extract(solutionVector);
+
+        OutputObserver::_appendField(t, *subfield);
     } // for
     _closeSolnStep();
 
@@ -139,28 +143,30 @@ pylith::meshio::OutputSolnPoints::_writeSolnStep(const PylithReal t,
 // ---------------------------------------------------------------------------------------------------------------------
 // Setup interpolator.
 void
-pylith::meshio::OutputSolnPoints::_setupInterpolator(const pylith::topology::Mesh& mesh) {
+pylith::meshio::OutputSolnPoints::_setupInterpolator(const pylith::topology::Field& solution) {
     PYLITH_METHOD_BEGIN;
 
     PetscErrorCode err = DMInterpolationDestroy(&_interpolator);PYLITH_CHECK_ERROR(err);
     assert(!_interpolator);
 
-    const spatialdata::geocoords::CoordSys* csMesh = mesh.getCoordSys();assert(csMesh);
+    const spatialdata::geocoords::CoordSys* csMesh = solution.mesh().getCoordSys();assert(csMesh);
     const int spaceDim = csMesh->getSpaceDim();
 
-    // Setup interpolator object
-    PetscDM dmMesh = mesh.dmMesh();assert(dmMesh);
+    MPI_Comm comm = solution.mesh().comm();
 
-    err = DMInterpolationCreate(mesh.comm(), &_interpolator);PYLITH_CHECK_ERROR(err);
+    // Setup interpolator object
+    PetscDM dmSoln = solution.dmMesh();assert(dmSoln);
+
+    err = DMInterpolationCreate(comm, &_interpolator);PYLITH_CHECK_ERROR(err);
     err = DMInterpolationSetDim(_interpolator, spaceDim);PYLITH_CHECK_ERROR(err);
     err = DMInterpolationAddPoints(_interpolator, _pointCoords.size(), (PetscReal*) &_pointCoords[0]);PYLITH_CHECK_ERROR(err);
     const PetscBool pointsAllProcs = PETSC_TRUE;
     const PetscBool ignoreOutsideDomain = PETSC_FALSE;
-    err = DMInterpolationSetUp(_interpolator, dmMesh, pointsAllProcs, ignoreOutsideDomain);PYLITH_CHECK_ERROR(err);
+    err = DMInterpolationSetUp(_interpolator, dmSoln, pointsAllProcs, ignoreOutsideDomain);PYLITH_CHECK_ERROR(err);
 
     // Create mesh corresponding to local points.
     const int meshDim = 0;
-    delete _pointsMesh;_pointsMesh = new pylith::topology::Mesh(meshDim, mesh.comm());assert(_pointsMesh);
+    delete _pointsMesh;_pointsMesh = new pylith::topology::Mesh(meshDim, comm);assert(_pointsMesh);
 
     const int numVertices = _interpolator->n; // Number of local points
     PylithScalar* pointCoordsLocal = NULL;
@@ -182,10 +188,10 @@ pylith::meshio::OutputSolnPoints::_setupInterpolator(const pylith::topology::Mes
     err = VecRestoreArray(_interpolator->coords, &pointCoordsLocal);PYLITH_CHECK_ERROR(err);
 
     // Set coordinate system and create nondimensionalized coordinates
-    _pointsMesh->setCoordSys(mesh.getCoordSys());
+    _pointsMesh->setCoordSys(csMesh);
 
     PylithReal lengthScale = 1.0;
-    err = DMPlexGetScale(mesh.dmMesh(), PETSC_UNIT_LENGTH, &lengthScale);PYLITH_CHECK_ERROR(err);
+    err = DMPlexGetScale(dmSoln, PETSC_UNIT_LENGTH, &lengthScale);PYLITH_CHECK_ERROR(err);
     err = DMPlexSetScale(_pointsMesh->dmMesh(), PETSC_UNIT_LENGTH, lengthScale);PYLITH_CHECK_ERROR(err);
 
 #if 0 // DEBUGGING
@@ -213,60 +219,46 @@ pylith::meshio::OutputSolnPoints::_setupInterpolator(const pylith::topology::Mes
     _pointNames = pointNamesLocal;
     _pointCoords.resize(0);
 
+    // Determine size of interpolated field that we will have.
+    PetscInt numDof = 0;
+    const pylith::string_vector& subfieldNames = solution.subfieldNames();
+    const size_t numSubfields = subfieldNames.size();
+    for (size_t i = 0; i < numSubfields; ++i) {
+        numDof += solution.subfieldInfo(subfieldNames[i].c_str()).description.numComponents;
+    } // for
+    err = DMInterpolationSetDof(_interpolator, numDof);PYLITH_CHECK_ERROR(err);
+
+    const PetscDM dmPoints = _pointsMesh->dmMesh();assert(dmPoints);
+    pylith::topology::Stratum pointsStratum(dmPoints, pylith::topology::Stratum::DEPTH, 0);
+
+    delete _pointsSoln;_pointsSoln = new pylith::topology::Field(*_pointsMesh);
+    for (size_t i = 0; i < subfieldNames.size(); ++i) {
+        const pylith::topology::Field::SubfieldInfo& sinfo = solution.subfieldInfo(subfieldNames[i].c_str());
+        _pointsSoln->subfieldAdd(sinfo.description, sinfo.fe);
+    } // for
+    _pointsSoln->subfieldsSetup();
+    _pointsSoln->createDiscretization();
+    _pointsSoln->setLabel(solution.getLabel());
+    _pointsSoln->allocate();
+    _pointsSoln->zeroLocal();
+    _pointsSoln->createOutputVector();
+
     PYLITH_METHOD_END;
 } // setupInterpolator
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Append finite-element field to file.
-pylith::topology::Field*
-pylith::meshio::OutputSolnPoints::_interpolateField(const pylith::topology::Field& field) {
+void
+pylith::meshio::OutputSolnPoints::_interpolateField(const pylith::topology::Field& solution) {
     PYLITH_METHOD_BEGIN;
 
-#if 1
-    pylith::topology::Field* fieldInterp = NULL;
-#else
-    // Create field if necessary for interpolated values or recreate
-    // field if mismatch in size between buffer and field.
-    const std::string& fieldName = std::string(field.getLabel()) + " (interpolated)";
-    if (!_fields->hasField(fieldName.c_str())) {
-        _fields->add(fieldName.c_str(), field.getLabel());
-    } // if
+    PetscErrorCode err;
+    PetscVec interpolatedLocalVec = NULL;
+    err = DMInterpolationGetVector(_interpolator, &interpolatedLocalVec);PYLITH_CHECK_ERROR(err);
+    err = DMInterpolationEvaluate(_interpolator, solution.dmMesh(), solution.localVector(), interpolatedLocalVec);PYLITH_CHECK_ERROR(err);
 
-    // Determine size of interpolated field that we will have.
-    PylithInt numDof = 0;
-    const pylith::string_vector& subfieldNames = field.subfieldNames();
-    const size_t numSubfields = subfieldNames.size();
-    for (size_t i = 0; i < numSubfields; ++i) {
-        numDof += field.subfieldInfo(subfieldNames[i].c_str()).description.numComponents;
-    } // for
-    const PetscDM dmpoints = _pointsMesh->dmMesh();assert(dmpoints);
-    pylith::topology::Stratum pointsStratum(dmpoints, pylith::topology::Stratum::DEPTH, 0);
-    const PylithInt numPointsLocal = pointsStratum.size();
-
-    pylith::topology::Field* fieldInterp = &_fields->get(fieldName.c_str());
-    PetscInt reallocateLocal = numPointsLocal * numDof != fieldInterp->sectionSize();
-    // The decision to reallocate a field must be collective
-    PetscInt reallocateGlobal = 0;
-    PetscErrorCode err = MPI_Allreduce(&reallocateLocal, &reallocateGlobal, 1, MPIU_INT, MPI_LOR, fieldInterp->mesh().comm());PYLITH_CHECK_ERROR(err);
-    if (reallocateGlobal) {
-        fieldInterp->deallocate();
-        for (size_t i = 0; i < subfieldNames.size(); ++i) {
-            const pylith::topology::Field::SubfieldInfo& sinfo = field.subfieldInfo(subfieldNames[i].c_str());
-            fieldInterp->subfieldAdd(sinfo.description, sinfo.fe);
-        } // for
-        fieldInterp->subfieldsSetup();
-        fieldInterp->createDiscretization();
-        fieldInterp->allocate();
-    } // if
-    fieldInterp->setLabel(field.getLabel());
-    fieldInterp->zeroLocal();
-
-    err = DMInterpolationSetDof(_interpolator, numDof);PYLITH_CHECK_ERROR(err);
-    err = DMInterpolationEvaluate(_interpolator, field.dmMesh(), field.localVector(), fieldInterp->localVector());PYLITH_CHECK_ERROR(err);
-#endif
-
-    PYLITH_METHOD_RETURN(fieldInterp);
+    PYLITH_METHOD_END;
 } // appendVertexField
 
 

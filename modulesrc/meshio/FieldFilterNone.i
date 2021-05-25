@@ -24,37 +24,39 @@
 
 namespace pylith {
     namespace meshio {
-
         class pylith::meshio::FieldFilterNone : public FieldFilter {
+            // PUBLIC METHODS /////////////////////////////////////////////////
+public:
 
-	  // PUBLIC METHODS /////////////////////////////////////////////////
-	public :
-	  
-	  /// Constructor
-	  FieldFilterNone(void);
-	  
-	  /// Destructor
-	  ~FieldFilterNone(void);
-	  
-	  /** Create copy of filter.
-	   *
-	   * @returns Copy of filter.
-	   */
-	  FieldFilter* clone(void) const;
-	  
-	  /// Deallocate PETSc and local data structures.
-	  void deallocate(void);
-	  
-	  /** Filter vertex field.
-	   *
-	   * @param fieldIn Field to filter.
-	   */
-	  const pylith::topology::Field* filter(pylith::topology::Field* fieldIn);
-	  
-	}; // FieldFilterNone
-      
+            /// Constructor
+            FieldFilterNone(void);
+
+            /// Destructor
+            ~FieldFilterNone(void);
+
+            /** Create DM associated with filtered field.
+             *
+             * @param[in] dm PETSc DM of unfiltered field.
+             * @param[in] description Description of input field.
+             * @param[in] discretization Discretization of input field.
+             */
+            PetscDM createDM(PetscDM dm,
+                             const pylith::topology::FieldBase::Description& description,
+                             const pylith::topology::FieldBase::Discretization& discretization) const;
+
+            /** Apply filter to global PETSc vector.
+             *
+             * @param[out] vectorOut Filtered global PETSc vector.
+             * @param[in] dmOut PETSc DM associated with filtered global PETSc vector.
+             * @param[in] vectorIn PETSc global vector to filter.
+             */
+            void apply(PetscVec* vectorOut,
+                       PetscDM dmOut,
+                       PetscVec vectorIn) const;
+
+        }; // FieldFilterNone
+
     } // meshio
 } // pylith
 
-
-// End of file 
+// End of file

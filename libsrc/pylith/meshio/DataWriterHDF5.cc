@@ -127,9 +127,6 @@ pylith::meshio::DataWriterHDF5::open(const pylith::topology::Mesh& mesh,
         err = PetscViewerHDF5PushGroup(_viewer, "/geometry");PYLITH_CHECK_ERROR(err);
         PetscVec coordsGlobalVec = NULL;
         DataWriter::getCoordsGlobalVec(&coordsGlobalVec, mesh);
-#if 0
-        err = VecView(coordsGlobalVec, _viewer);PYLITH_CHECK_ERROR(err);
-#else
         PetscBool isseq;
         err = PetscObjectTypeCompare((PetscObject) coordsGlobalVec, VECSEQ, &isseq);PYLITH_CHECK_ERROR(err);
         if (isseq) {
@@ -137,7 +134,6 @@ pylith::meshio::DataWriterHDF5::open(const pylith::topology::Mesh& mesh,
         } else {
             err = VecView_MPI(coordsGlobalVec, _viewer);PYLITH_CHECK_ERROR(err);
         } // if/else
-#endif
         err = VecDestroy(&coordsGlobalVec);PYLITH_CHECK_ERROR(err);
         err = PetscViewerHDF5PopGroup(_viewer);PYLITH_CHECK_ERROR(err);
 

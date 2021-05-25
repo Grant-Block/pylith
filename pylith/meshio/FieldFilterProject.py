@@ -54,7 +54,7 @@ class FieldFilterProject(FieldFilter, ModuleFieldFilterProject):
     def preinitialize(self):
         """Do minimal initialization."""
         FieldFilter.preinitialize(self)
-        ModuleFieldFilterProject.basisOrder(self, self.basisOrder)
+        ModuleFieldFilterProject.setBasisOrder(self, self.basisOrder)
         return
 
     # PRIVATE METHODS /////////////////////////////////////////////////////

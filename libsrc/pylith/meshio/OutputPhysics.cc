@@ -332,20 +332,19 @@ pylith::meshio::OutputPhysics::_writeDataStep(const PylithReal t,
     if (derivedField) { derivedField->scatterLocalToOutput(); }
     PetscVec derivedVector = (derivedField) ? derivedField->outputVector() : NULL;
 
-    solution.scatterLocalToOutput();
     PetscVec solutionVector = solution.outputVector();assert(solutionVector);
 
     const size_t numDataFields = dataNames.size();
     for (size_t i = 0; i < numDataFields; i++) {
         OutputSubfield* subfield = NULL;
         if (solution.hasSubfield(dataNames[i].c_str())) {
-            subfield = _getSubfield(solution, dataNames[i].c_str());
+            subfield = OutputObserver::_getSubfield(solution, dataNames[i].c_str(), &domainMesh);assert(subfield);
             subfield->extract(solutionVector);
         } else if (auxiliaryField && auxiliaryField->hasSubfield(dataNames[i].c_str())) {
-            subfield = _getSubfield(*auxiliaryField, dataNames[i].c_str());
+            subfield = OutputObserver::_getSubfield(*auxiliaryField, dataNames[i].c_str());assert(subfield);
             subfield->extract(auxiliaryVector);
         } else if (derivedField && derivedField->hasSubfield(dataNames[i].c_str())) {
-            subfield = _getSubfield(*derivedField, dataNames[i].c_str());
+            subfield = OutputObserver::_getSubfield(*derivedField, dataNames[i].c_str());assert(subfield);
             subfield->extract(derivedVector);
         } else {
             std::ostringstream msg;
@@ -354,10 +353,8 @@ pylith::meshio::OutputPhysics::_writeDataStep(const PylithReal t,
             throw std::runtime_error(msg.str());
         } // if/else
 
-        assert(subfield);
-        _appendField(0.0, *subfield);
+        OutputObserver::_appendField(0.0, *subfield);
     } // for
-
     _closeDataStep();
 
     PYLITH_METHOD_END;
