@@ -20,6 +20,7 @@
 
 #include "FieldFilterProject.hh" // Implementation of class methods
 
+#include "pylith/fekernels/Solution.hh" // USES passThruSubfield
 #include "pylith/topology/Field.hh" // USES Field
 #include "pylith/topology/FieldOps.hh" // USES FieldOps
 
@@ -30,7 +31,7 @@
 pylith::meshio::FieldFilterProject::FieldFilterProject(void) :
     _basisOrder(1) {
     PyreComponent::setName("fieldfilterproject");
-    _passThruFns[0] = passThruSoln;
+    _passThruFns[0] = pylith::fekernels::Solution::passThruSubfield;
 } // constructor
 
 
@@ -112,38 +113,6 @@ pylith::meshio::FieldFilterProject::apply(PetscVec* vectorOut,
 
     PYLITH_METHOD_END;
 }
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Identify function kernel.
-void
-pylith::meshio::FieldFilterProject::passThruSoln(const PylithInt dim,
-                                                 const PylithInt numS,
-                                                 const PylithInt numA,
-                                                 const PylithInt sOff[],
-                                                 const PylithInt sOff_x[],
-                                                 const PylithScalar s[],
-                                                 const PylithScalar s_t[],
-                                                 const PylithScalar s_x[],
-                                                 const PylithInt aOff[],
-                                                 const PylithInt aOff_x[],
-                                                 const PylithScalar a[],
-                                                 const PylithScalar a_t[],
-                                                 const PylithScalar a_x[],
-                                                 const PylithReal t,
-                                                 const PylithScalar x[],
-                                                 const PylithInt numConstants,
-                                                 const PylithScalar constants[],
-                                                 PylithScalar field[]) {
-    assert(s);
-    assert(field);
-    assert(1 == numS);
-
-    const PylithInt sEnd = sOff[1];
-    for (PylithInt i = sOff[0]; i < sEnd; ++i) {
-        field[i] = s[i];
-    } // for
-} // passThruSoln
 
 
 // End of file

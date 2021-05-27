@@ -73,6 +73,7 @@ libpylith_la_SOURCES = \
 	fekernels/IsotropicLinearIncompElasticity.cc \
 	fekernels/Poroelasticity.cc \
 	fekernels/IsotropicLinearPoroelasticity.cc \
+	fekernels/Solution.cc \
 	fekernels/DispVel.cc \
 	fekernels/TimeDependentFn.cc \
 	fekernels/NeumannTimeDependent.cc \
