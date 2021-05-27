@@ -54,9 +54,10 @@ public:
                            const pylith::topology::Mesh* submesh=NULL);
 
     /// Destructor
-    ~OutputSubfield(void);
+    virtual ~OutputSubfield(void);
 
     /// Deallocate PETSc and local data structures.
+    virtual
     void deallocate(void);
 
     /** Get description of subfield.
@@ -81,6 +82,7 @@ public:
      *
      * @param[in] fieldVector PETSc vector with subfields.
      */
+    virtual
     void extract(const PetscVec& fieldVector);
 
     // PRIVATE METHODS ////////////////////////////////////////////////////////////////////////////
@@ -100,8 +102,14 @@ private:
                    PetscIS is,
                    const pylith::meshio::FieldFilter* filter);
 
-    // PRIVATE MEMBERS ////////////////////////////////////////////////////////////////////////////
-private:
+    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
+protected:
+
+    /// Constructor.
+    OutputSubfield(void);
+
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
+protected:
 
     pylith::topology::FieldBase::Description _description; ///< Description of subfield.
     pylith::topology::FieldBase::Discretization _discretization; ///< Discretization of subfield.

@@ -30,6 +30,17 @@
 #include <typeinfo> // USES typeid()
 
 // ------------------------------------------------------------------------------------------------
+// Constructor
+pylith::meshio::OutputSubfield::OutputSubfield(void) :
+    _dm(NULL),
+    _is(NULL),
+    _vector(NULL),
+    _filter(NULL),
+    _filteredDM(NULL),
+    _filteredVector(NULL) {}
+
+
+// ------------------------------------------------------------------------------------------------
 // Destructor
 pylith::meshio::OutputSubfield::~OutputSubfield(void) {
     deallocate();
@@ -59,7 +70,10 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
                                        const char* name,
                                        const pylith::meshio::FieldFilter* filter,
                                        const pylith::topology::Mesh* submesh) {
+    PYLITH_METHOD_BEGIN;
+
     const pylith::topology::Field::SubfieldInfo& info = field.subfieldInfo(name);
+    pylith::topology::Field::Discretization discretizationSubfield = info.fe;
 
     PetscDM subfieldDM = NULL;
     PetscIS subfieldIS = NULL;
@@ -76,16 +90,28 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
             subfieldIS = pylith::topology::FieldOps::createSubfieldIS(field, name);
         } // if/else
     } else {
+        assert(submesh);
         subfieldDM = pylith::topology::FieldOps::createSubdofDM(field.dmMesh(), submesh->dmMesh(), info.index);
         subfieldIS = pylith::topology::FieldOps::createSubdofIS(field, name, *submesh);
+
+        // :KLUDGE: Modify discretization to be lower dimension.
+        // We should really project the solution onto the lower dimension mesh to have the
+        // proper discretization.
+        discretizationSubfield.dimension = submesh->dimension();
+        PetscFE fe = pylith::topology::FieldOps::createFE(discretizationSubfield, subfieldDM, info.description.numComponents);assert(fe);
+        err = PetscFESetName(fe, info.description.label.c_str());PYLITH_CHECK_ERROR(err);
+        err = DMSetField(subfieldDM, 0, NULL, (PetscObject)fe);PYLITH_CHECK_ERROR(err);
+        err = DMSetFieldAvoidTensor(subfieldDM, 0, PETSC_TRUE);PYLITH_CHECK_ERROR(err);
+        err = PetscFEDestroy(&fe);PYLITH_CHECK_ERROR(err);
+        err = DMCreateDS(subfieldDM);PYLITH_CHECK_ERROR(err);
     } // if/else
     assert(subfieldDM);
     assert(subfieldIS);
     err = PetscObjectSetName((PetscObject)subfieldDM, name);PYLITH_CHECK_ERROR(err);
 
-    OutputSubfield* subfield = new OutputSubfield(info.description, info.fe, subfieldDM, subfieldIS,
+    OutputSubfield* subfield = new OutputSubfield(info.description, discretizationSubfield, subfieldDM, subfieldIS,
                                                   filter);assert(subfield);
-    return subfield;
+    PYLITH_METHOD_RETURN(subfield);
 }
 
 
@@ -117,13 +143,18 @@ pylith::meshio::OutputSubfield::getDM(void) const {
 // Extract subfield data from global PETSc vector with subfields.
 void
 pylith::meshio::OutputSubfield::extract(const PetscVec& fieldVector) {
-    assert(_dm);
+    PYLITH_METHOD_BEGIN;
     assert(_is);
+    assert(_vector);
     PetscErrorCode err = VecISCopy(fieldVector, _is, SCATTER_REVERSE, _vector);PYLITH_CHECK_ERROR(err);
     if (_filter) {
+        assert(_filteredDM);
         _filter->apply(&_filteredVector, _filteredDM, _vector);
     } // if
+    assert(_filteredVector);
     err = VecScale(_filteredVector, _description.scale);PYLITH_CHECK_ERROR(err);
+
+    PYLITH_METHOD_END;
 }
 
 
@@ -142,6 +173,8 @@ pylith::meshio::OutputSubfield::OutputSubfield(const pylith::topology::FieldBase
     _filter(filter),
     _filteredDM(NULL),
     _filteredVector(NULL) {
+    PYLITH_METHOD_BEGIN;
+
     PetscErrorCode err;
 
     const char* const name = description.label.c_str();
@@ -162,6 +195,8 @@ pylith::meshio::OutputSubfield::OutputSubfield(const pylith::topology::FieldBase
         _filteredVector = _vector;
         err = PetscObjectReference((PetscObject)_vector);PYLITH_CHECK_ERROR(err);
     } // if/else
+
+    PYLITH_METHOD_END;
 }
 
 

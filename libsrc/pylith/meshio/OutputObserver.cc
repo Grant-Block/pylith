@@ -71,6 +71,7 @@ pylith::meshio::OutputObserver::deallocate(void) {
     _writer = NULL; // :TODO: Use shared pointer
     _fieldFilter = NULL; // :TODO: Use shared pointer
     _trigger = NULL; // :TODO: Use shared pointer
+
 } // deallocate
 
 
@@ -137,14 +138,18 @@ pylith::meshio::OutputSubfield*
 pylith::meshio::OutputObserver::_getSubfield(const pylith::topology::Field& field,
                                              const char* name,
                                              const pylith::topology::Mesh* submesh) {
+    PYLITH_METHOD_BEGIN;
+    PYLITH_COMPONENT_DEBUG("_getSubfield(field="<<field.getLabel()<<", name="<<name<<", submesh="<<typeid(submesh).name()<<")");
+
     if (_subfields.count(name) == 0) {
         _subfields[name] = OutputSubfield::create(field, name, _fieldFilter, submesh);
     } // if
-    return _subfields[name];
+
+    PYLITH_METHOD_RETURN(_subfields[name]);
 }
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Append finite-element vertex field to file.
 void
 pylith::meshio::OutputObserver::_appendField(const PylithReal t,
