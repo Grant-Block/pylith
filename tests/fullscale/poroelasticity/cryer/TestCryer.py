@@ -67,7 +67,7 @@ class TestCase(FullTestCase):
         vertexFields = ['biot_coefficient', 'biot_modulus', 'drained_bulk_modulus',
                         'fluid_density', 'fluid_viscosity', 'isotropic_permeability',
                         'porosity', 'shear_modulus', 'solid_density']
-        for material in self.MATERIALS.keys():
+        for material in self.MATERIALS:
             filename = "output/{}-{}_info.h5".format(self.NAME, material)
             check_data(filename, self, self.MATERIALS[material], vertexFields=vertexFields,
                        ratio_tolerance=ratio_tolerance, diff_tolerance=diff_tolerance)
@@ -75,7 +75,7 @@ class TestCase(FullTestCase):
 
     def test_material_solution(self):
         vertexFields = ["displacement", "pressure"]
-        for material in self.MATERIALS.keys():
+        for material in self.MATERIALS:
             filename = "output/{}-{}.h5".format(self.NAME, material)
             check_data(filename, self, self.MATERIALS[material], vertexFields=vertexFields,
                        ratio_tolerance=ratio_tolerance, diff_tolerance=diff_tolerance)
