@@ -199,10 +199,9 @@ pylith::meshio::TestDataWriterVTKMesh::testWriteVertexField(void) {
     const pylith::string_vector& subfieldNames = vertexField.subfieldNames();
     const size_t numFields = subfieldNames.size();
     for (size_t i = 0; i < numFields; ++i) {
-        const FieldFilter* filter = NULL;
-        OutputSubfield* subfield = OutputSubfield::create(vertexField, subfieldNames[i].c_str(), filter);
+        OutputSubfield* subfield = OutputSubfield::create(vertexField, *_mesh, subfieldNames[i].c_str(), 1);
         CPPUNIT_ASSERT(subfield);
-        subfield->extract(vertexField.outputVector());
+        subfield->project(vertexField.outputVector());
         writer.writeVertexField(t, *subfield);
         CPPUNIT_ASSERT(writer._wroteVertexHeader);
         CPPUNIT_ASSERT_EQUAL(false, writer._wroteCellHeader);
@@ -243,10 +242,9 @@ pylith::meshio::TestDataWriterVTKMesh::testWriteCellField(void) {
     const pylith::string_vector& subfieldNames = cellField.subfieldNames();
     const size_t numFields = subfieldNames.size();
     for (size_t i = 0; i < numFields; ++i) {
-        const FieldFilter* filter = NULL;
-        OutputSubfield* subfield = OutputSubfield::create(cellField, subfieldNames[i].c_str(), filter);
+        OutputSubfield* subfield = OutputSubfield::create(cellField, *_mesh, subfieldNames[i].c_str(), 0);
         CPPUNIT_ASSERT(subfield);
-        subfield->extract(cellField.outputVector());
+        subfield->project(cellField.outputVector());
         writer.writeCellField(t, *subfield);
         CPPUNIT_ASSERT_EQUAL(false, writer._wroteVertexHeader);
         CPPUNIT_ASSERT(writer._wroteCellHeader);

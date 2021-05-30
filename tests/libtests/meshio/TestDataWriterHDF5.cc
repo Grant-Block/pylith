@@ -26,7 +26,7 @@
 #include <hdf5.h> // USES HDF5 API
 
 #if H5_VERSION_GE(1,12,0)
-  #define PYLITH_HDF5_USE_API_112
+#define PYLITH_HDF5_USE_API_112
 #endif
 
 // ----------------------------------------------------------------------
@@ -103,7 +103,7 @@ pylith_meshio_TestDataWriterHDF5_checkObject(hid_t id,
             for (int i = 0; i < size; ++i) {
                 const double toleranceV = std::max(tolerance, tolerance*dataE[i]);
                 std::ostringstream msg;
-                msg << "Mismatch in dataset '" << name << ", at index " << i << ".";
+                msg << "Mismatch in dataset '" << name << "' at index " << i << ".";
                 CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE(msg.str().c_str(), dataE[i], double(data[i]), toleranceV);
             } // for
 
@@ -131,7 +131,7 @@ pylith_meshio_TestDataWriterHDF5_checkObject(hid_t id,
 
             for (int i = 0; i < size; ++i) {
                 std::ostringstream msg;
-                msg << "Mismatch in dataset '" << name << ", at index " << i << ".";
+                msg << "Mismatch in dataset '" << name << "' at index " << i << ".";
                 CPPUNIT_ASSERT_EQUAL(dataE[i], data[i]);
             } // for
 
