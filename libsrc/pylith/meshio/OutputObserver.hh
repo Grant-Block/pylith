@@ -92,12 +92,12 @@ protected:
     /** Get output subfield, creating if necessary.
      *
      * @param[in] field Field containing subfields.
+     * @param[in] submesh Submesh associated with output.
      * @param[in] name Name of subfield.
-     * @param[in] submesh Submesh associated with output (NULL if full domain).
      */
     OutputSubfield* _getSubfield(const pylith::topology::Field& field,
-                                 const char* name,
-                                 const pylith::topology::Mesh* submesh=NULL);
+                                 const pylith::topology::Mesh& submesh,
+                                 const char* name);
 
     /** Append subfield at current time to output.
      *

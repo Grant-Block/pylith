@@ -136,13 +136,14 @@ pylith::meshio::OutputObserver::setTimeScale(const PylithReal value) {
 // Get output subfield, creating if necessary.
 pylith::meshio::OutputSubfield*
 pylith::meshio::OutputObserver::_getSubfield(const pylith::topology::Field& field,
-                                             const char* name,
-                                             const pylith::topology::Mesh* submesh) {
+                                             const pylith::topology::Mesh& submesh,
+                                             const char* name) {
     PYLITH_METHOD_BEGIN;
     PYLITH_COMPONENT_DEBUG("_getSubfield(field="<<field.getLabel()<<", name="<<name<<", submesh="<<typeid(submesh).name()<<")");
 
     if (_subfields.count(name) == 0) {
-        _subfields[name] = OutputSubfield::create(field, name, _fieldFilter, submesh);
+        const int basisOrder = 1;
+        _subfields[name] = OutputSubfield::create(field, submesh, name, basisOrder);
     } // if
 
     PYLITH_METHOD_RETURN(_subfields[name]);

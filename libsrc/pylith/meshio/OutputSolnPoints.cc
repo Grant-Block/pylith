@@ -129,8 +129,8 @@ pylith::meshio::OutputSolnPoints::_writeSolnStep(const PylithReal t,
         assert(solution.hasSubfield(subfieldNames[iField].c_str()));
 
         OutputSubfield* subfield = NULL;
-        subfield = OutputObserver::_getSubfield(*_pointsSoln, subfieldNames[iField].c_str(), _pointsMesh);assert(subfield);
-        subfield->extract(solutionVector);
+        subfield = OutputObserver::_getSubfield(*_pointsSoln, *_pointsMesh, subfieldNames[iField].c_str());assert(subfield);
+        subfield->project(solutionVector);
 
         OutputObserver::_appendField(t, *subfield);
     } // for

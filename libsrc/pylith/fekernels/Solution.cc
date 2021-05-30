@@ -46,14 +46,11 @@ pylith::fekernels::Solution::passThruSubfield(const PylithInt dim,
     assert(s);
     assert(sOff);
     assert(field);
-    assert(1 == numS);
+    const PetscInt subfieldIndex = PetscInt(t); // :KLUDGE: Easiest way to get subfield to extract into fn.
 
-    const PylithInt sEnd = sOff[1];
-    for (PylithInt i = sOff[0]; i < sEnd; ++i) {
-        if (isnan(s[i])) {
-            int i = 0;
-        }
-        field[i] = s[i];
+    const PylithInt sEnd = sOff[subfieldIndex+1];
+    for (PylithInt iS = sOff[subfieldIndex], iF = 0; iS < sEnd; ++iS, ++iF) {
+        field[iF] = s[iS];
     } // for
 } // passThruSubfield
 

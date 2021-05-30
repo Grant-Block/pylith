@@ -31,7 +31,7 @@
 
 #include "pylith/topology/FieldBase.hh" // HASA Description, Discretization
 
-#include "pylith/topology/topologyfwd.hh" // USES Field, FieldFilter
+#include "pylith/topology/topologyfwd.hh" // USES Field
 #include "pylith/utils/petscfwd.h" // HASA PetscVec
 
 class pylith::meshio::OutputSubfield : public pylith::utils::GenericComponent {
@@ -43,21 +43,20 @@ public:
     /** Create OutputSubfield from Field.
      *
      * @param[in] field Field with subfields.
+     * @param[in] mesh Mesh for subfield.
      * @param[in] name Name of subfield that will be extracted.
-     * @param[in] filter Filter to apply to subfield.
-     * @param[in] submesh Submesh for subfield.
+     * @param[in] basisOrder Basis order for subfield.
      */
     static
     OutputSubfield* create(const pylith::topology::Field& field,
+                           const pylith::topology::Mesh& mesh,
                            const char* name,
-                           const pylith::meshio::FieldFilter* filter,
-                           const pylith::topology::Mesh* submesh=NULL);
+                           const int basisOrder=1);
 
     /// Destructor
-    virtual ~OutputSubfield(void);
+    ~OutputSubfield(void);
 
     /// Deallocate PETSc and local data structures.
-    virtual
     void deallocate(void);
 
     /** Get description of subfield.
@@ -66,46 +65,28 @@ public:
      */
     const pylith::topology::FieldBase::Description& getDescription(void) const;
 
-    /** Get filtered PETSc global vector.
+    /** Get PETSc global vector for projected subfield.
      *
      * @returns PETSc global vector.
      */
     PetscVec getVector(void) const;
 
-    /** Get PETSc DM for filtered vector.
+    /** Get PETSc DM for projected subfield.
      *
      * @returns PETSc DM.
      */
     PetscDM getDM(void) const;
 
-    /** Extract subfield data from global PETSc vector with subfields.
+    /** Project PETSc vector to subfield.
      *
      * @param[in] fieldVector PETSc vector with subfields.
      */
-    virtual
-    void extract(const PetscVec& fieldVector);
+    void project(const PetscVec& fieldVector);
 
     // PRIVATE METHODS ////////////////////////////////////////////////////////////////////////////
 private:
 
-    /** Constructor.
-     *
-     * @param[in] description Description of subfield.
-     * @param[in] discretization Discretization of subfield.
-     * @param[in] dm PETSc DM for subfield.
-     * @param[in] is PETSc IS for subfield.
-     * @param[in] filter Filter to apply to subfield.
-     */
-    OutputSubfield(const pylith::topology::FieldBase::Description& description,
-                   const pylith::topology::FieldBase::Discretization& discretization,
-                   PetscDM dm,
-                   PetscIS is,
-                   const pylith::meshio::FieldFilter* filter);
-
-    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
-protected:
-
-    /// Constructor.
+    // Constructor.
     OutputSubfield(void);
 
     // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
@@ -114,12 +95,9 @@ protected:
     pylith::topology::FieldBase::Description _description; ///< Description of subfield.
     pylith::topology::FieldBase::Discretization _discretization; ///< Discretization of subfield.
     PetscDM _dm; ///< PETSc DM for subfield.
-    PetscIS _is; ///< PETSc IS for subfield.
     PetscVec _vector; ///< PETSc global vector for subfield.
-
-    const pylith::meshio::FieldFilter* _filter; ///< Filter to apply to field.
-    PetscDM _filteredDM; ///< PETSc DM for filtered vector.
-    PetscVec _filteredVector; ///< PETSc global vector after filtering.
+    PetscPointFunc _fn; ///< PETSc point function for projection.
+    PetscInt _subfieldIndex; ///< Index of subfield in fields.
 
     // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
