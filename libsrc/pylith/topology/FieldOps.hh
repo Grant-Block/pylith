@@ -97,15 +97,6 @@ public:
     void checkDiscretization(const pylith::topology::Field& target,
                              const pylith::topology::Field& auxiliary);
 
-    /** Get basis order for field.
-     *
-     * @warning Throws std::logic_error() if PetscDS contains more than one subfield.
-     *
-     * @param[in] dm PETSc DM associated with field.
-     */
-    static
-    int getBasisOrder(const PetscDM dm);
-
     /** Get names of subfields extending over the entire domain.
      *
      * Excludes subfields extending over only a subset of the domain, like the fault Lagrange multiplier subfield.

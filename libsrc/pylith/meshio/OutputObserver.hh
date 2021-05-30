@@ -67,11 +67,11 @@ public:
      */
     void setWriter(pylith::meshio::DataWriter* const writer);
 
-    /** Set filter for vertex data.
+    /** Set basis order for output.
      *
-     * @param[in] filter Filter to apply to vertex data before writing.
+     * @param[in] value Basis order for output.
      */
-    void setFieldFilter(pylith::meshio::FieldFilter* const filter);
+    void setOutputBasisOrder(const int value);
 
     /** Set time scale.
      *
@@ -113,8 +113,8 @@ protected:
     PylithReal _timeScale; ///< Time scale for dimentionalizing time.
     std::map<std::string, OutputSubfield*> _subfields; ///< Subfields extracted for output.
     DataWriter* _writer; ///< Writer for data.
-    FieldFilter* _fieldFilter; ///< Filter applied to subfields.
     OutputTrigger* _trigger; ///< Trigger for deciding how often to write output.
+    int _outputBasisOrder; ///< Basis order for output.
 
     // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:

@@ -101,6 +101,14 @@ pylith::meshio::OutputSubfield::getDescription(void) const {
 
 
 // ------------------------------------------------------------------------------------------------
+// Get basis order of subfield.
+int
+pylith::meshio::OutputSubfield::getBasisOrder(void) const {
+    return _discretization.basisOrder;
+}
+
+
+// ------------------------------------------------------------------------------------------------
 // Get filtered PETSc global vector.
 PetscVec
 pylith::meshio::OutputSubfield::getVector(void) const {

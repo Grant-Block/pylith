@@ -21,7 +21,6 @@
 #include "OutputObserver.hh" // Implementation of class methods
 
 #include "pylith/meshio/DataWriter.hh" // USES DataWriter
-#include "pylith/meshio/FieldFilter.hh" // USES FieldFilter
 #include "pylith/meshio/OutputTrigger.hh" // USES OutputTrigger
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 
@@ -40,8 +39,8 @@
 pylith::meshio::OutputObserver::OutputObserver(void) :
     _timeScale(1.0),
     _writer(NULL),
-    _fieldFilter(NULL),
-    _trigger(NULL)
+    _trigger(NULL),
+    _outputBasisOrder(1)
 {}
 
 
@@ -60,7 +59,6 @@ pylith::meshio::OutputObserver::deallocate(void) {
         _writer->close();
         _writer->deallocate();
     }
-    if (_fieldFilter) { _fieldFilter->deallocate(); }
 
     typedef std::map<std::string, OutputSubfield*> subfield_t;
     for (subfield_t::iterator iter = _subfields.begin(); iter != _subfields.end(); ++iter) {
@@ -69,7 +67,6 @@ pylith::meshio::OutputObserver::deallocate(void) {
     _subfields.clear();
 
     _writer = NULL; // :TODO: Use shared pointer
-    _fieldFilter = NULL; // :TODO: Use shared pointer
     _trigger = NULL; // :TODO: Use shared pointer
 
 } // deallocate
@@ -107,16 +104,22 @@ pylith::meshio::OutputObserver::setWriter(DataWriter* const writer) {
 
 
 // ------------------------------------------------------------------------------------------------
-// Set filter for fields.
+// Set basis order for output.
 void
-pylith::meshio::OutputObserver::setFieldFilter(FieldFilter* const filter) {
+pylith::meshio::OutputObserver::setOutputBasisOrder(const int value) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_COMPONENT_DEBUG("OutputObserver::setFieldFilter(filter="<<typeid(filter).name()<<")");
+    PYLITH_COMPONENT_DEBUG("OutputObserver::setBasisOrder(value="<<value<<")");
 
-    _fieldFilter = filter; // :TODO: Use shared pointer
+    if (value < 0) {
+        std::ostringstream msg;
+        msg << "Basis order for output (" << value << ") must be nonnegative.";
+        throw std::out_of_range(msg.str());
+    } // if
+
+    _outputBasisOrder = value;
 
     PYLITH_METHOD_END;
-} // setFieldFilter
+} // setOutputBasisOrder
 
 
 // ------------------------------------------------------------------------------------------------
@@ -142,8 +145,7 @@ pylith::meshio::OutputObserver::_getSubfield(const pylith::topology::Field& fiel
     PYLITH_COMPONENT_DEBUG("_getSubfield(field="<<field.getLabel()<<", name="<<name<<", submesh="<<typeid(submesh).name()<<")");
 
     if (_subfields.count(name) == 0) {
-        const int basisOrder = 1;
-        _subfields[name] = OutputSubfield::create(field, submesh, name, basisOrder);
+        _subfields[name] = OutputSubfield::create(field, submesh, name, _outputBasisOrder);
     } // if
 
     PYLITH_METHOD_RETURN(_subfields[name]);
@@ -158,7 +160,8 @@ pylith::meshio::OutputObserver::_appendField(const PylithReal t,
     PYLITH_METHOD_BEGIN;
     PYLITH_COMPONENT_DEBUG("_appendField(t="<<t<<", subfield="<<typeid(subfield).name()<<")");
 
-    const int basisOrder = pylith::topology::FieldOps::getBasisOrder(subfield.getDM());
+    // Use basis order from subfield since requested basis order for output may be greater than original basis order.
+    const int basisOrder = subfield.getBasisOrder();
     switch (basisOrder) {
     case 0:
         _writer->writeCellField(t, subfield);
@@ -170,9 +173,8 @@ pylith::meshio::OutputObserver::_appendField(const PylithReal t,
 
     default:
         PYLITH_COMPONENT_ERROR(
-            "Unsupported basis order ("
-                << basisOrder <<") for output. Use FieldFilterProject with basis order of 0 or 1. Skipping output of '"
-                << subfield.getDescription().label << "' field."
+            "Unsupported basis order ("<< basisOrder <<") for output. Skipping output of '"
+                                       << subfield.getDescription().label << "' field."
             );
     } // switch
 

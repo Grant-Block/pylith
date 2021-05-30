@@ -196,24 +196,6 @@ pylith::topology::FieldOps::checkDiscretization(const pylith::topology::Field& t
 
 
 // ------------------------------------------------------------------------------------------------
-// Get basis order of field.
-int
-pylith::topology::FieldOps::getBasisOrder(const PetscDM dm) {
-    PYLITH_METHOD_BEGIN;
-
-    PetscInt basisOrder = -1;
-    PetscFE fe = NULL;
-    PetscSpace space = NULL;
-    PetscErrorCode err;
-    err = DMGetField(dm, 0, NULL, (PetscObject*)&fe);PYLITH_CHECK_ERROR(err);
-    err = PetscFEGetBasisSpace(fe, &space);PYLITH_CHECK_ERROR(err);
-    err = PetscSpaceGetDegree(space, &basisOrder, NULL);PYLITH_CHECK_ERROR(err);
-
-    PYLITH_METHOD_RETURN(basisOrder);
-} // getBasisOrder
-
-
-// ------------------------------------------------------------------------------------------------
 // Get names of subfields extending over entire domain.
 pylith::string_vector
 pylith::topology::FieldOps::getSubfieldNamesDomain(const pylith::topology::Field& field) {

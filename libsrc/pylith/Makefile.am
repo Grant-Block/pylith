@@ -110,9 +110,6 @@ libpylith_la_SOURCES = \
 	meshio/PsetFile.cc \
 	meshio/PsetFileAscii.cc \
 	meshio/PsetFileBinary.cc \
-	meshio/FieldFilter.cc \
-	meshio/FieldFilterNone.cc \
-	meshio/FieldFilterProject.cc \
 	meshio/DataWriter.cc \
 	meshio/HDF5.cc \
 	meshio/Xdmf.cc \

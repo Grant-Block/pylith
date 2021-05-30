@@ -65,9 +65,6 @@ namespace pylith {
         class DataWriterVTK;
         class DataWriterHDF5;
         class DataWriterHDF5Ext;
-        class FieldFilter;
-        class FieldFilterNone;
-        class FieldFilterProject;
 
         class HDF5;
         class Xdmf;

@@ -36,10 +36,6 @@ test_meshio_SOURCES = \
 	TestOutputTriggerStep.cc \
 	TestOutputTriggerTime.cc
 
-# :TODO: @brad
-#TestFieldFilterProject.cc
-#TestFieldFilterNone.cc
-
 # VTK data writer
 test_vtk_SOURCES = \
 	test_driver.cc \

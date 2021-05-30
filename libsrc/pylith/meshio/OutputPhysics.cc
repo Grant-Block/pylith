@@ -21,7 +21,6 @@
 #include "OutputPhysics.hh" // Implementation of class methods
 
 #include "pylith/meshio/DataWriter.hh" // USES DataWriter
-#include "pylith/meshio/FieldFilter.hh" // USES FieldFilter
 #include "pylith/meshio/OutputTrigger.hh" // USES OutputTrigger
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 #include "pylith/feassemble/PhysicsImplementation.hh" // USES PhysicsImplementation

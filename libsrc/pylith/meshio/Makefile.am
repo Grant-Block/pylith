@@ -43,9 +43,6 @@ subpkginclude_HEADERS = \
 	OutputSolnBoundary.hh \
 	OutputSolnPoints.hh \
 	OutputPhysics.hh \
-	FieldFilter.hh \
-	FieldFilterNone.hh \
-	FieldFilterProject.hh \
 	OutputTrigger.hh \
 	OutputTriggerStep.hh \
 	OutputTriggerTime.hh \

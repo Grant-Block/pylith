@@ -65,6 +65,12 @@ public:
      */
     const pylith::topology::FieldBase::Description& getDescription(void) const;
 
+    /** Get basis order of subfield.
+     *
+     * @returns Basis order of subfield.
+     */
+    int getBasisOrder(void) const;
+
     /** Get PETSc global vector for projected subfield.
      *
      * @returns PETSc global vector.
