@@ -25,7 +25,7 @@
 #include "pylith/meshio/DataWriterHDF5Ext.hh" // USES DataWriterHDF5Ext
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Setup testing data.
 void
 pylith::meshio::TestDataWriterHDF5ExtMaterial::setUp(void) {
@@ -38,7 +38,7 @@ pylith::meshio::TestDataWriterHDF5ExtMaterial::setUp(void) {
 } // setUp
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Tear down testing data.
 void
 pylith::meshio::TestDataWriterHDF5ExtMaterial::tearDown(void) {
@@ -51,7 +51,7 @@ pylith::meshio::TestDataWriterHDF5ExtMaterial::tearDown(void) {
 } // tearDown
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test open() and close()
 void
 pylith::meshio::TestDataWriterHDF5ExtMaterial::testOpenClose(void) {
@@ -74,7 +74,7 @@ pylith::meshio::TestDataWriterHDF5ExtMaterial::testOpenClose(void) {
 } // testOpenClose
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeVertexField.
 void
 pylith::meshio::TestDataWriterHDF5ExtMaterial::testWriteVertexField(void) {
@@ -117,7 +117,7 @@ pylith::meshio::TestDataWriterHDF5ExtMaterial::testWriteVertexField(void) {
 } // testWriteVertexField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeCellField.
 void
 pylith::meshio::TestDataWriterHDF5ExtMaterial::testWriteCellField(void) {
@@ -159,7 +159,7 @@ pylith::meshio::TestDataWriterHDF5ExtMaterial::testWriteCellField(void) {
 } // testWriteCellField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Get test data.
 pylith::meshio::TestDataWriterMaterial_Data*
 pylith::meshio::TestDataWriterHDF5ExtMaterial::_getData(void) {

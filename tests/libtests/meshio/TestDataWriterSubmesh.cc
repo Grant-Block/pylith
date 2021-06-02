@@ -37,7 +37,7 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Setup testing data.
 void
 pylith::meshio::TestDataWriterSubmesh::setUp(void) {
@@ -50,7 +50,7 @@ pylith::meshio::TestDataWriterSubmesh::setUp(void) {
 } // setUp
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Tear down testing data.
 void
 pylith::meshio::TestDataWriterSubmesh::tearDown(void) {
@@ -63,7 +63,7 @@ pylith::meshio::TestDataWriterSubmesh::tearDown(void) {
 } // tearDown
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Initialize mesh.
 void
 pylith::meshio::TestDataWriterSubmesh::_initialize(void) {
@@ -98,12 +98,11 @@ pylith::meshio::TestDataWriterSubmesh::_initialize(void) {
 } // _initialize
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Create vertex fields.
 void
 pylith::meshio::TestDataWriterSubmesh::_createVertexField(pylith::topology::Field* field) {
     PYLITH_METHOD_BEGIN;
-
     CPPUNIT_ASSERT(field);
     CPPUNIT_ASSERT(_mesh);
 
@@ -128,12 +127,11 @@ pylith::meshio::TestDataWriterSubmesh::_createVertexField(pylith::topology::Fiel
 } // _createVertexFields
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Create cell fields.
 void
 pylith::meshio::TestDataWriterSubmesh::_createCellField(pylith::topology::Field* field) {
     PYLITH_METHOD_BEGIN;
-
     CPPUNIT_ASSERT(field);
 
     const TestDataWriterSubmesh_Data* data = _getData();CPPUNIT_ASSERT(data);
@@ -175,7 +173,7 @@ pylith::meshio::TestDataWriterSubmesh::_setDataTri(void) {
     // Vertex fields ------------------------------------------------------------------------------
     static const size_t vertexNumPoints = 6;
     static const size_t vertexNumDOF = 1 + 2 + 3 + 2;
-    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1);
+    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1, 2);
 
     data->vertexNumPoints = vertexNumPoints;
     data->vertexNumDOF = vertexNumDOF;
@@ -220,7 +218,7 @@ pylith::meshio::TestDataWriterSubmesh::_setDataQuad(void) {
     // Vertex fields ------------------------------------------------------------------------------
     static const size_t vertexNumPoints = 6;
     static const size_t vertexNumDOF = 1 + 2 + 3 + 2;
-    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1);
+    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1, 2);
 
     data->vertexNumPoints = vertexNumPoints;
     data->vertexNumDOF = vertexNumDOF;
@@ -256,7 +254,7 @@ pylith::meshio::TestDataWriterSubmesh::_setDataTet(void) {
 
     data->meshFilename = "data/tet4.mesh";
     data->bcLabel = "boundary";
-    data->spaceDim = 2;
+    data->spaceDim = 3;
     data->lengthScale = 10.0;
 
     data->time = 1.0;
@@ -265,7 +263,7 @@ pylith::meshio::TestDataWriterSubmesh::_setDataTet(void) {
     // Vertex fields ------------------------------------------------------------------------------
     static const size_t vertexNumPoints = 5;
     static const size_t vertexNumDOF = 1 + 3 + 6 + 2;
-    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1);
+    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1, 3);
 
     data->vertexNumPoints = vertexNumPoints;
     data->vertexNumDOF = vertexNumDOF;
@@ -281,7 +279,7 @@ pylith::meshio::TestDataWriterSubmesh::_setDataTet(void) {
     // Cell fields --------------------------------------------------------------------------------
     static const size_t cellNumPoints = 2;
     static const size_t cellNumDOF = 1 + 3 + 6 + 2;
-    data->cellDiscretization = pylith::topology::FieldBase::Discretization(0, 0);
+    data->cellDiscretization = pylith::topology::FieldBase::Discretization(0, 0, 2);
 
     data->cellNumPoints = cellNumPoints;
     data->cellNumDOF = cellNumDOF;
@@ -309,7 +307,7 @@ pylith::meshio::TestDataWriterSubmesh::_setDataHex(void) {
     // Vertex fields ------------------------------------------------------------------------------
     static const size_t vertexNumPoints = 12;
     static const size_t vertexNumDOF = 1 + 3 + 6 + 2;
-    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1);
+    data->vertexDiscretization = pylith::topology::FieldBase::Discretization(1, 1, 3);
 
     data->vertexNumPoints = vertexNumPoints;
     data->vertexNumDOF = vertexNumDOF;
@@ -344,13 +342,13 @@ pylith::meshio::TestDataWriterSubmesh::_setDataHex(void) {
 } // setDataHex
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Constructor
 pylith::meshio::TestDataWriterSubmesh_Data::TestDataWriterSubmesh_Data(void) :
     bcLabel(NULL) {}
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor
 pylith::meshio::TestDataWriterSubmesh_Data::~TestDataWriterSubmesh_Data(void) {}
 

@@ -29,7 +29,7 @@
 #define PYLITH_HDF5_USE_API_112
 #endif
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 herr_t
 pylith_meshio_TestDataWriterHDF5_checkObject(hid_t id,
                                              const char* name,
@@ -62,7 +62,7 @@ pylith_meshio_TestDataWriterHDF5_checkObject(hid_t id,
         } // for
 
         // Get dataset
-        hid_t dataset = H5Dopen2(*file, name, H5P_DEFAULT);CPPUNIT_ASSERT(dataset >= 0);
+        hid_t dataset = H5Dopen2(*file, name, H5P_DEFAULT);CPPUNIT_ASSERT_MESSAGE(name, dataset >= 0);
         hid_t dataspace = H5Dget_space(dataset);CPPUNIT_ASSERT(dataspace >= 0);
         const int ndims = H5Sget_simple_extent_ndims(dataspace);CPPUNIT_ASSERT(ndims > 0);
         hsize_t* dims = (ndims > 0) ? new hsize_t[ndims] : 0;
@@ -164,7 +164,7 @@ pylith_meshio_TestDataWriterHDF5_checkObject(hid_t id,
 } // checkObject
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Check HDF5 file against archived file.
 void
 pylith::meshio::TestDataWriterHDF5::checkFile(const char* filename) {
@@ -193,7 +193,7 @@ pylith::meshio::TestDataWriterHDF5::checkFile(const char* filename) {
 } // checkFile
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Constructor
 pylith::meshio::TestDataWriterHDF5_Data::TestDataWriterHDF5_Data(void) :
     opencloseFilename(NULL),
@@ -201,7 +201,7 @@ pylith::meshio::TestDataWriterHDF5_Data::TestDataWriterHDF5_Data(void) :
     cellFilename(NULL) {}
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor
 pylith::meshio::TestDataWriterHDF5_Data::~TestDataWriterHDF5_Data(void) {}
 

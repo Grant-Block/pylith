@@ -24,7 +24,7 @@
 #include "pylith/meshio/DataWriterVTK.hh" // USES DataWriterVTK
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Setup testing data.
 void
 pylith::meshio::TestDataWriterVTKMaterial::setUp(void) {
@@ -37,7 +37,7 @@ pylith::meshio::TestDataWriterVTKMaterial::setUp(void) {
 } // setUp
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Tear down testing data.
 void
 pylith::meshio::TestDataWriterVTKMaterial::tearDown(void) {
@@ -50,7 +50,7 @@ pylith::meshio::TestDataWriterVTKMaterial::tearDown(void) {
 } // tearDown
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test openTimeStep() and closeTimeStep()
 void
 pylith::meshio::TestDataWriterVTKMaterial::testTimeStep(void) {
@@ -87,7 +87,7 @@ pylith::meshio::TestDataWriterVTKMaterial::testTimeStep(void) {
 } // testTimeStep
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeVertexField.
 void
 pylith::meshio::TestDataWriterVTKMaterial::testWriteVertexField(void) {
@@ -132,7 +132,7 @@ pylith::meshio::TestDataWriterVTKMaterial::testWriteVertexField(void) {
 } // testWriteVertexField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeCellField.
 void
 pylith::meshio::TestDataWriterVTKMaterial::testWriteCellField(void) {
@@ -175,7 +175,7 @@ pylith::meshio::TestDataWriterVTKMaterial::testWriteCellField(void) {
 } // testWriteCellField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Get test data.
 pylith::meshio::TestDataWriterMaterial_Data*
 pylith::meshio::TestDataWriterVTKMaterial::_getData(void) {

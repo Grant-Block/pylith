@@ -51,7 +51,20 @@ public:
     OutputSubfield* create(const pylith::topology::Field& field,
                            const pylith::topology::Mesh& mesh,
                            const char* name,
-                           const int basisOrder=1);
+                           const int basisOrder);
+
+    /** Create OutputSubfield from Field.
+     *
+     * @note Use this method in combination with extractSubfield() when there is no projection.
+     *
+     * @param[in] field Field with subfields.
+     * @param[in] mesh Mesh for subfield.
+     * @param[in] name Name of subfield that will be extracted.
+     */
+    static
+    OutputSubfield* create(const pylith::topology::Field& field,
+                           const pylith::topology::Mesh& mesh,
+                           const char* name);
 
     /// Destructor
     ~OutputSubfield(void);
@@ -88,6 +101,16 @@ public:
      * @param[in] fieldVector PETSc vector with subfields.
      */
     void project(const PetscVec& fieldVector);
+
+    /** Extract subfield from field.
+     *
+     * @pre DM must match for field and subfield.
+     *
+     * @param[in] field Field with all subfields.
+     * @param[in] subfieldIndex Index of subfield to extract.
+     */
+    void extractSubfield(const pylith::topology::Field& field,
+                         const PetscInt subfieldIndex);
 
     // PRIVATE METHODS ////////////////////////////////////////////////////////////////////////////
 private:

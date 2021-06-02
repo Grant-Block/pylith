@@ -97,8 +97,8 @@ private:
 
     pylith::scalar_array _pointCoords; ///< Array of point coordinates.
     pylith::string_vector _pointNames; ///< Array of point names.
-    pylith::topology::Mesh* _pointsMesh; ///< Mesh for points (no cells).
-    pylith::topology::Field* _pointsSoln; ///< Solution field at points.
+    pylith::topology::Mesh* _pointMesh; ///< Mesh for points (no cells).
+    pylith::topology::Field* _pointSoln; ///< Solution field at points.
     DMInterpolationInfo _interpolator; ///< Field interpolator.
 
     // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////

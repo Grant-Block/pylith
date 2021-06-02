@@ -44,19 +44,19 @@ test_vtk_SOURCES = \
 	TestDataWriterMesh.cc \
 	TestDataWriterMaterial.cc \
 	TestDataWriterSubmesh.cc \
+	TestDataWriterPoints.cc \
 	TestDataWriterVTK.cc \
 	TestDataWriterVTKMesh.cc \
 	TestDataWriterVTKMesh_Cases.cc \
 	TestDataWriterVTKMaterial.cc \
 	TestDataWriterVTKMaterial_Cases.cc \
 	TestDataWriterVTKSubmesh.cc \
-	TestDataWriterVTKSubmesh_Cases.cc
+	TestDataWriterVTKSubmesh_Cases.cc \
+	TestDataWriterVTKPoints.cc \
+	TestDataWriterVTKPoints_Cases.cc
 
 
 # :TODO: @brad
-# TestDataWriterPoints.cc \
-# TestDataWriterVTKPoints.cc \
-# TestDataWriterVTKPoints_Cases.cc \
 # TestDataWriterFaultMesh.cc \
 # TestDataWriterVTKFaultMesh.cc \
 # TestDataWriterVTKFaultMesh_Cases.cc \
@@ -73,6 +73,7 @@ test_hdf5_SOURCES = \
 	TestDataWriterMesh.cc \
 	TestDataWriterMaterial.cc \
 	TestDataWriterSubmesh.cc \
+	TestDataWriterPoints.cc \
 	TestHDF5.cc \
 	TestDataWriterHDF5.cc \
 	TestDataWriterHDF5Mesh.cc \
@@ -81,20 +82,20 @@ test_hdf5_SOURCES = \
 	TestDataWriterHDF5Material_Cases.cc \
 	TestDataWriterHDF5Submesh.cc \
 	TestDataWriterHDF5Submesh_Cases.cc \
+	TestDataWriterHDF5Points.cc \
+	TestDataWriterHDF5Points_Cases.cc \
 	TestDataWriterHDF5ExtMesh.cc \
 	TestDataWriterHDF5ExtMesh_Cases.cc \
 	TestDataWriterHDF5ExtMaterial.cc \
 	TestDataWriterHDF5ExtMaterial_Cases.cc \
 	TestDataWriterHDF5ExtSubmesh.cc \
-	TestDataWriterHDF5ExtSubmesh_Cases.cc
+	TestDataWriterHDF5ExtSubmesh_Cases.cc \
+	TestDataWriterHDF5ExtPoints.cc \
+	TestDataWriterHDF5ExtPoints_Cases.cc
 
 
-# TestDataWriterHDF5Points.cc \
-# TestDataWriterHDF5Point_Cases.cc \
 # TestDataWriterHDF5FaultMesh.cc \
 # TestDataWriterHDF5FaultMeshCases.cc \
-# TestDataWriterHDF5ExtPoints.cc \
-# TestDataWriterHDF5ExtPoints_Cases.cc \
 # TestDataWriterHDF5ExtFaultMesh.cc \
 # TestDataWriterHDF5ExtFaultMeshCases.cc
 
@@ -114,27 +115,27 @@ noinst_HEADERS = \
 	TestDataWriterMesh.hh \
 	TestDataWriterMaterial.hh \
 	TestDataWriterSubmesh.hh \
+	TestDataWriterPoints.hh \
 	TestDataWriterVTK.hh \
 	TestDataWriterVTKMesh.hh \
 	TestDataWriterVTKMaterial.hh \
 	TestDataWriterVTKSubmesh.hh \
+	TestDataWriterVTKPoints.hh \
 	TestHDF5.hh \
 	TestDataWriterHDF5.hh \
 	TestDataWriterHDF5Mesh.hh \
 	TestDataWriterHDF5Material.hh \
 	TestDataWriterHDF5Submesh.hh \
+	TestDataWriterHDF5Points.hh \
 	TestDataWriterHDF5ExtMesh.hh \
 	TestDataWriterHDF5ExtMaterial.hh \
-	TestDataWriterHDF5ExtSubmesh.hh
+	TestDataWriterHDF5ExtSubmesh.hh \
+	TestDataWriterHDF5ExtPoints.hh
 
 # :TODO: @brad
-# TestDataWriterPoints.hh \
-# TestDataWriterVTKPoints.hh
 # TestDataWriterFaultMesh.hh \
 # TestDataWriterVTKFaultMesh.hh
-# TestDataWriterHDF5Points.hh \
 # TestDataWriterHDF5FaultMesh.hh \
-# TestDataWriterHDF5ExtPoints.hh \
 # TestDataWriterHDF5ExtFaultMesh.hh
 
 

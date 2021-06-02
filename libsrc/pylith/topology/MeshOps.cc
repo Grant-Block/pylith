@@ -188,10 +188,13 @@ pylith::topology::MeshOps::nondimensionalize(Mesh* const mesh,
     err = DMPlexSetScale(dmMesh, PETSC_UNIT_LENGTH, lengthScale);PYLITH_CHECK_ERROR(err);
     err = DMViewFromOptions(dmMesh, NULL, "-pylith_nondim_dm_view");PYLITH_CHECK_ERROR(err);
 
+    const PetscInt dim = mesh->dimension();
+    if (dim < 1) {
+        PYLITH_METHOD_END;
+    } // if
     PylithReal coordMin[3];
     PylithReal coordMax[3];
     err = DMGetBoundingBox(dmMesh, coordMin, coordMax);
-    const PetscInt dim = mesh->dimension();
     PylithReal volume = 1.0;
     for (int i = 0; i < dim; ++i) {
         volume *= coordMax[i] - coordMin[i];

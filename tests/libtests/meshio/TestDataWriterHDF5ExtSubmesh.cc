@@ -26,7 +26,7 @@
 #include "pylith/meshio/DataWriterHDF5Ext.hh" // USES DataWriterHDF5Ext
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Setup testing data.
 void
 pylith::meshio::TestDataWriterHDF5ExtSubmesh::setUp(void) {
@@ -39,7 +39,7 @@ pylith::meshio::TestDataWriterHDF5ExtSubmesh::setUp(void) {
 } // setUp
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Tear down testing data.
 void
 pylith::meshio::TestDataWriterHDF5ExtSubmesh::tearDown(void) {
@@ -52,7 +52,7 @@ pylith::meshio::TestDataWriterHDF5ExtSubmesh::tearDown(void) {
 } // tearDown
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test openTimeStep() and closeTimeStep()
 void
 pylith::meshio::TestDataWriterHDF5ExtSubmesh::testOpenClose(void) {
@@ -75,7 +75,7 @@ pylith::meshio::TestDataWriterHDF5ExtSubmesh::testOpenClose(void) {
 } // testOpenClose
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeVertexField.
 void
 pylith::meshio::TestDataWriterHDF5ExtSubmesh::testWriteVertexField(void) {
@@ -118,7 +118,7 @@ pylith::meshio::TestDataWriterHDF5ExtSubmesh::testWriteVertexField(void) {
 } // testWriteVertexField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeCellField.
 void
 pylith::meshio::TestDataWriterHDF5ExtSubmesh::testWriteCellField(void) {
@@ -160,7 +160,7 @@ pylith::meshio::TestDataWriterHDF5ExtSubmesh::testWriteCellField(void) {
 } // testWriteCellField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Get test data.
 pylith::meshio::TestDataWriterSubmesh_Data*
 pylith::meshio::TestDataWriterHDF5ExtSubmesh::_getData(void) {

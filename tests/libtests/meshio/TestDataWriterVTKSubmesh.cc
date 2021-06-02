@@ -25,7 +25,7 @@
 #include "pylith/meshio/DataWriterVTK.hh" // USES DataWriterVTK
 #include "pylith/meshio/OutputSubfield.hh" // USES OutputSubfield
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Setup testing data.
 void
 pylith::meshio::TestDataWriterVTKSubmesh::setUp(void) {
@@ -38,7 +38,7 @@ pylith::meshio::TestDataWriterVTKSubmesh::setUp(void) {
 } // setUp
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Tear down testing data.
 void
 pylith::meshio::TestDataWriterVTKSubmesh::tearDown(void) {
@@ -51,17 +51,15 @@ pylith::meshio::TestDataWriterVTKSubmesh::tearDown(void) {
 } // tearDown
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test openTimeStep() and closeTimeStep()
 void
 pylith::meshio::TestDataWriterVTKSubmesh::testTimeStep(void) {
     PYLITH_METHOD_BEGIN;
-
     CPPUNIT_ASSERT(_submesh);
     CPPUNIT_ASSERT(_data);
 
     DataWriterVTK writer;
-
     writer.filename(_data->timestepFilename);
     writer.timeFormat(_data->timeFormat);
 
@@ -88,21 +86,19 @@ pylith::meshio::TestDataWriterVTKSubmesh::testTimeStep(void) {
 } // testTimeStep
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeVertexField.
 void
 pylith::meshio::TestDataWriterVTKSubmesh::testWriteVertexField(void) {
     PYLITH_METHOD_BEGIN;
-
     CPPUNIT_ASSERT(_mesh);
     CPPUNIT_ASSERT(_submesh);
     CPPUNIT_ASSERT(_data);
 
-    DataWriterVTK writer;
-
     pylith::topology::Field vertexField(*_mesh);
     _createVertexField(&vertexField);
 
+    DataWriterVTK writer;
     writer.filename(_data->vertexFilename);
     writer.timeFormat(_data->timeFormat);
 
@@ -134,7 +130,7 @@ pylith::meshio::TestDataWriterVTKSubmesh::testWriteVertexField(void) {
 } // testWriteVertexField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Test writeCellField.
 void
 pylith::meshio::TestDataWriterVTKSubmesh::testWriteCellField(void) {
@@ -179,7 +175,7 @@ pylith::meshio::TestDataWriterVTKSubmesh::testWriteCellField(void) {
 } // testWriteCellField
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Get test data.
 pylith::meshio::TestDataWriterSubmesh_Data*
 pylith::meshio::TestDataWriterVTKSubmesh::_getData(void) {

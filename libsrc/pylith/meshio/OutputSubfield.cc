@@ -23,6 +23,7 @@
 #include "pylith/topology/Field.hh" // USES Field
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/FieldOps.hh" // USES FieldOps
+#include "pylith/topology/VisitorMesh.hh" // USES VecVisitorMesh
 #include "pylith/fekernels/Solution.hh" // USES Solution
 
 #include "pylith/utils/error.hh" // USES PYLITH_CHECK_ERROR
@@ -93,6 +94,45 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
 
 
 // ------------------------------------------------------------------------------------------------
+// Create OutputSubfield from Field.
+pylith::meshio::OutputSubfield*
+pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
+                                       const pylith::topology::Mesh& mesh,
+                                       const char* name) {
+    PYLITH_METHOD_BEGIN;
+
+    OutputSubfield* subfield = new OutputSubfield();assert(subfield);
+
+    const pylith::topology::Field::SubfieldInfo& info = field.subfieldInfo(name);
+    subfield->_subfieldIndex = info.index;
+    subfield->_description = info.description;
+
+    PetscErrorCode err;
+    err = DMClone(mesh.dmMesh(), &subfield->_dm);PYLITH_CHECK_ERROR(err);
+    err = PetscObjectSetName((PetscObject)subfield->_dm, name);PYLITH_CHECK_ERROR(err);
+
+    pylith::topology::VecVisitorMesh fieldVisitor(field, name);
+
+    PetscSection subfieldSection = NULL;
+    PetscInt pStart = 0, pEnd = 0;
+    err = PetscSectionClone(fieldVisitor.localSection(), &subfieldSection);PYLITH_CHECK_ERROR(err);
+    err = PetscSectionGetChart(fieldVisitor.localSection(), &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
+    for (PetscInt point = pStart, offset = 0; point < pEnd; ++point) {
+        const PetscInt numDof = fieldVisitor.sectionDof(point);
+        err = PetscSectionSetOffset(subfieldSection, point, offset);PYLITH_CHECK_ERROR(err);
+        err = PetscSectionSetDof(subfieldSection, point, numDof);PYLITH_CHECK_ERROR(err);
+        offset += numDof;
+    } // for
+    err = DMSetLocalSection(subfield->_dm, subfieldSection);PYLITH_CHECK_ERROR(err);
+    err = PetscSectionDestroy(&subfieldSection);PYLITH_CHECK_ERROR(err);
+    err = DMCreateGlobalVector(subfield->_dm, &subfield->_vector);PYLITH_CHECK_ERROR(err);
+    err = PetscObjectSetName((PetscObject)subfield->_vector, name);PYLITH_CHECK_ERROR(err);
+
+    PYLITH_METHOD_RETURN(subfield);
+}
+
+
+// ------------------------------------------------------------------------------------------------
 // Get description of subfield.
 const pylith::topology::FieldBase::Description&
 pylith::meshio::OutputSubfield::getDescription(void) const {
@@ -136,6 +176,49 @@ pylith::meshio::OutputSubfield::project(const PetscVec& fieldVector) {
     const PetscReal t = PetscReal(_subfieldIndex) + 0.01; // :KLUDGE: Easiest way to get subfield to extract into fn.
     err = DMProjectField(_dm, t, fieldVector, &_fn, INSERT_VALUES, _vector);PYLITH_CHECK_ERROR(err);
     err = VecScale(_vector, _description.scale);PYLITH_CHECK_ERROR(err);
+
+    PYLITH_METHOD_END;
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Extract subfield from field.
+void
+pylith::meshio::OutputSubfield::extractSubfield(const pylith::topology::Field& field,
+                                                const PetscInt subfieldIndex) {
+    PYLITH_METHOD_BEGIN;
+
+    pylith::topology::VecVisitorMesh fieldVisitor(field);
+
+    PetscErrorCode err;
+
+    PetscSection subfieldSection = NULL;
+    PetscInt storageSize = 0;
+    err = PetscSectionGetField(field.localSection(), subfieldIndex, &subfieldSection);PYLITH_CHECK_ERROR(err);
+    err = PetscSectionGetStorageSize(subfieldSection, &storageSize);PYLITH_CHECK_ERROR(err);
+
+    PetscVec subfieldVector = this->getVector();
+    PetscInt subfieldSize = 0;
+    err = VecGetLocalSize(subfieldVector, &subfieldSize);PYLITH_CHECK_ERROR(err);
+    assert(subfieldSize == storageSize);
+
+    PetscInt pStart = 0, pEnd = 0;
+    err = PetscSectionGetChart(subfieldSection, &pStart, &pEnd);
+
+    PetscScalar* solnArray = fieldVisitor.localArray();
+    PetscScalar* subfieldArray = NULL;
+    err = VecGetArray(subfieldVector, &subfieldArray);PYLITH_CHECK_ERROR(err);
+
+    for (PetscInt point = pStart, indexVec = 0; point < pEnd; ++point) {
+        const PetscInt solnOffset = fieldVisitor.sectionSubfieldOffset(subfieldIndex, point);
+        const PetscInt solnDof = fieldVisitor.sectionSubfieldDof(subfieldIndex, point);
+
+        for (PetscInt iDof = 0; iDof < solnDof; ++iDof) {
+            subfieldArray[indexVec++] = solnArray[solnOffset+iDof];
+        } // for
+    } // for
+
+    err = VecRestoreArray(subfieldVector, &subfieldArray);PYLITH_CHECK_ERROR(err);
 
     PYLITH_METHOD_END;
 }

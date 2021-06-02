@@ -28,14 +28,6 @@ class OutputSolnPoints(OutputSoln, ModuleOutputSolnPoints):
     """Python object for managing output of finite-element solution
     information over a subdomain.
 
-    INVENTORY
-
-    Properties
-      - None
-
-    Facilities
-      - *reader* Reader for list of points.
-
     FACTORY: observer
     """
 
