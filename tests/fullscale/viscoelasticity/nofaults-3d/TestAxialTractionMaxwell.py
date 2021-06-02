@@ -55,12 +55,11 @@ class TestCase(FullTestCase):
         return
 
     def test_material_info(self):
-        vertexFields = ["density", "bulk_modulus",
-                        "shear_modulus", "maxwell_time"]
+        cellFields = ["density", "bulk_modulus", "shear_modulus", "maxwell_time"]
         for material in self.MATERIALS:
             filename = "output/{}-{}_info.h5".format(self.NAME, material)
             check_data(filename, self,
-                       self.MATERIALS[material], vertexFields=vertexFields)
+                       self.MATERIALS[material], cellFields=cellFields)
         return
 
     def test_material_solution(self):
@@ -73,12 +72,12 @@ class TestCase(FullTestCase):
         return
 
     def test_bcdirichlet_info(self):
-        vertexFields = ["initial_amplitude"]
+        cellFields = ["initial_amplitude"]
         for bc in self.DIRICHLET_BOUNDARIES:
             self.exactsoln.key = bc
             filename = "output/{}-{}_info.h5".format(self.NAME, bc)
             check_data(filename, self,
-                       self.BOUNDARIES[bc], vertexFields=vertexFields)
+                       self.BOUNDARIES[bc], cellFields=cellFields)
         return
 
     def test_bcdirichlet_solution(self):
@@ -90,12 +89,12 @@ class TestCase(FullTestCase):
         return
 
     def test_bcneumann_info(self):
-        vertexFields = ["initial_amplitude"]
+        cellFields = ["initial_amplitude"]
         for bc in self.NEUMANN_BOUNDARIES:
             self.exactsoln.key = bc
             filename = "output/{}-{}_info.h5".format(self.NAME, bc)
             check_data(filename, self,
-                       self.BOUNDARIES[bc], vertexFields=vertexFields)
+                       self.BOUNDARIES[bc], cellFields=cellFields)
         return
 
     def test_bcneumann_solution(self):
