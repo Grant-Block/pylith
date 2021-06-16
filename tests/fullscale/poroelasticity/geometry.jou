@@ -1,0 +1,110 @@
+# ----------------------------------------------------------------------
+# Generate geometry
+# ----------------------------------------------------------------------
+#playback 'geometry.jou'
+
+# ----------------------------------------------------------------------
+# Create surface using vertices, (Surrounding) 
+# ----------------------------------------------------------------------
+
+# Block is 10.0 m x 1.0 m
+# -5000 m <= x <= 5000 m 
+# -5000 m <= y <= 0 m
+
+${Units('si')}
+reset
+create vertex x {-5.0*km} y {-5.0*km} 
+create vertex x {-5.0*km} y {0.0*km} 
+create vertex x {5.0*km} y {0.0*km} 
+create vertex x {5.0*km} y {-5.0*km}
+create surface vertex 1 2 3 4
+delete vertex all
+
+
+# ----------------------------------------------------------------------
+# Set discretization size
+# ----------------------------------------------------------------------
+surface all size 0.5*km
+
+# ----------------------------------------------------------------------
+# Create second surface using vertices (Perm_Reservoir)
+# ----------------------------------------------------------------------
+
+create vertex x {-5.0*km} y {-1.1*km} 
+create vertex x {-5.0*km} y {-1.0*km} 
+create vertex x {5.0*km} y {-1.0*km} 
+create vertex x {5.0*km} y {-1.1*km}
+create surface vertex 5 6 7 8
+delete vertex all
+
+# ----------------------------------------------------------------------
+# Create third surface using vertices (Sorce)
+# ----------------------------------------------------------------------
+
+create vertex x {-0.01*km} y {-1.1*km} 
+create vertex x {-0.01*km} y {-1.0*km} 
+create vertex x {0.01*km} y {-1.0*km}
+create vertex x {0.01*km} y {-1.1*km}
+create surface vertex 9 10 11 12
+
+# ----------------------------------------------------------------------
+# Set discretization size
+# ----------------------------------------------------------------------
+surface all size 0.5*km
+
+# ----------------------------------------------------------------------
+# Generate the mesh
+# ----------------------------------------------------------------------
+surface all scheme submap
+mesh surface all
+
+# ----------------------------------------------------------------------
+# Create blocks for materials
+# ----------------------------------------------------------------------
+block 1 surface 1
+block 1 name "surrounding"
+block 1 element type quad
+
+block 2 surface 2
+block 2 name "perm_reservoir"
+block 2 element type quad
+
+block 3 surface 3
+block 3 name "source"
+block 3 element type quad
+
+# ----------------------------------------------------------------------
+# Create nodeset for -x edge
+# ----------------------------------------------------------------------
+group "x_neg" add node in curve 1
+nodeset 1 group x_neg
+nodeset 1 name "x_neg"
+
+# ----------------------------------------------------------------------
+# Create nodeset for +y edge
+# ----------------------------------------------------------------------
+group "y_pos" add node in curve  2
+nodeset 2 group y_pos
+nodeset 2 name "y_pos"
+
+# ----------------------------------------------------------------------
+# Create nodeset for +x edge
+# ----------------------------------------------------------------------
+group "x_pos" add node in curve 3
+nodeset 3 group x_pos
+nodeset 3 name "x_pos"
+
+# ----------------------------------------------------------------------
+# Create nodeset for -y edge Dirichlet
+# ----------------------------------------------------------------------
+group "y_neg" add node in curve  4
+nodeset 4 group y_neg
+nodeset 4 name "y_neg"
+
+
+# ----------------------------------------------------------------------
+# Export exodus file
+# ----------------------------------------------------------------------
+export mesh "~/Pylith/Meshes/Line_Injection/line_source_mesh_quad.exo" dimension 2 overwrite
+
+
