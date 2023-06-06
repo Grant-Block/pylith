@@ -1,20 +1,17 @@
 # PyLith
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/geodynamics/pylith/blob/master/COPYING)
-[![DOI](https://www.zenodo.org/badge/DOI/10.5281/zenodo.886600.svg)](https://doi.org/10.5281/zenodo.886600)
-
-
-
-## Build status
-* Master: [![Build Status](https://travis-ci.org/geodynamics/pylith.svg?branch=master)](https://travis-ci.org/geodynamics/pylith)
+[![DOI](https://www.zenodo.org/badge/DOI/10.5281/zenodo.7072811.svg)](https://doi.org/10.5281/zenodo.7072811)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/geodynamics/pylith/blob/main/LICENSE.md)
+[![Build Status](https://dev.azure.com/baagaard-usgs/pylith/_apis/build/status/geodynamics.pylith?branchName=main)](https://dev.azure.com/baagaard-usgs/pylith/_build/latest?definitionId=2&branchName=main)
+[![codecov](https://codecov.io/gh/geodynamics/pylith/branch/master/graph/badge.svg?token=JiwLVB64EF)](https://codecov.io/gh/geodynamics/pylith)
 
 ## Description
 
 PyLith is an open-source finite-element code for dynamic and
-quasistatic simulations of crustal deformation, primarily earthquakes
+quasi-static simulations of crustal deformation, primarily earthquakes
 and volcanoes.
 
-* Main page: [https://geodynamics.org/cig/software/pylith](https://geodynamics.org/cig/software/pylith)
+* Main page: [https://geodynamics.org/resources/pylith](https://geodynamics.org/resources/pylith)
   * User Manual
   * Binary packages
   * Utility to build PyLith and all of its dependencies from source
@@ -48,7 +45,7 @@ and volcanoes.
 
 ## Release Notes
 
-See [CHANGES](CHANGES) for a complete list of changes for each release.
+See [CHANGES](CHANGES.md) for a complete list of changes for each release.
 
 ## Authors
 

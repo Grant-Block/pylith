@@ -2,22 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/materials/Poroelasticity.py
-#
-# @brief Python object for solving the Poroelasticity equation.
-#
-# Factory: material
 
 from .Material import Material
 from .materials import Poroelasticity as ModulePoroelasticity
@@ -26,10 +20,25 @@ from .IsotropicLinearPoroelasticity import IsotropicLinearPoroelasticity
 
 
 class Poroelasticity(Material, ModulePoroelasticity):
-    """Python material property manager.
-
-    FACTORY: material
     """
+    Material behavior governed by the poroelasticity equation.
+
+    Implements `Material`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.problem.materials.mat_poroelastic]
+            description = Upper crust poroelastic material
+            label_value = 3
+            use_body_force = True
+            use_source_density = False
+            use_state_variables = True
+            bulk_rheology = pylith.materials.IsotropicLinearPoroelasticity
+
+            auxiliary_subfields.density.basis_order = 0
+            auxiliary_subfields.body_force.basis_order = 0
+        """
+    }
 
     import pythia.pyre.inventory
 
@@ -39,17 +48,16 @@ class Poroelasticity(Material, ModulePoroelasticity):
     useSourceDensity = pythia.pyre.inventory.bool("use_source_density", default=False)
     useSourceDensity.meta['tip'] = "Include source_density term in Poroelasticity equation."
 
-    rheology = pythia.pyre.inventory.facility(
-        "bulk_rheology", family="poroelasticity_rheology", factory=IsotropicLinearPoroelasticity)
-    rheology.meta['tip'] = "Bulk rheology for poroelastic material."
+    useStateVars = pythia.pyre.inventory.bool("use_state_variables", default=False)
+    useStateVars.meta['tip'] = "Update porosity state variable using compaction formulation."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    rheology = pythia.pyre.inventory.facility("bulk_rheology", family="poroelasticity_rheology", factory=IsotropicLinearPoroelasticity)
+    rheology.meta['tip'] = "Bulk rheology for poroelastic material."
 
     def __init__(self, name="poroelasticity"):
         """Constructor.
         """
         Material.__init__(self, name)
-        return
 
     def _defaults(self):
         from .AuxSubfieldsPoroelasticity import AuxSubfieldsPoroelasticity
@@ -68,14 +76,13 @@ class Poroelasticity(Material, ModulePoroelasticity):
 
         ModulePoroelasticity.useBodyForce(self, self.useBodyForce)
         ModulePoroelasticity.useSourceDensity(self, self.useSourceDensity)
-        return
+        ModulePoroelasticity.useStateVars(self, self.useStateVars)        
 
     def _createModuleObj(self):
         """Create handle to C++ Poroelasticity.
         """
         ModulePoroelasticity.__init__(self)
         ModulePoroelasticity.setBulkRheology(self, self.rheology)  # Material sets auxiliary db in rheology.
-        return
 
 
 # Factories

@@ -2,14 +2,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 
@@ -21,10 +21,33 @@ from pythia.pyre.components.Component import Component
 
 
 class SimulationMetadata(Component):
-    """Python object for holding simulation metadata.
-
-    FACTORY: simulation_metadata
     """
+    Metadata for simulation.
+
+    When using `base` to specify other files with metadata, the other files will append to the `keywords` and `features` lists, whereas other metadata will be overwritten (the same behavior as other Pyre properties).
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.metadata]
+            base = [pylithapp.cfg]
+            description = Axial extension using Dirichlet boundary conditions.
+            keywords = [example, 2D, box, axial extension]
+            features = [
+                Quadrilateral cells,
+                pylith.meshio.MeshIOAscii,
+                pylith.problems.TimeDependent,
+                pylith.materials.Elasticity,
+                pylith.materials.IsotropicLinearElasticity,
+                spatialdata.spatialdb.UniformDB,
+                pylith.meshio.DataWriterHDF5
+                ]
+            authors = [Brad Aagaard]
+            version = 1.0.0
+            arguments = [step01_axialdisp.cfg]
+            pylith_version = [>=3.0, <4.0]
+        """
+    }
+
 
     import pythia.pyre.inventory
 
@@ -66,6 +89,19 @@ class SimulationMetadata(Component):
         if not self.pylith_version:
             trait = self.inventory.getTrait("pylith_version")
             self._validationError(context, trait, "List of PyLith version constraints required.")
+
+        from pylith.utils.utils import PylithVersion
+        version = PylithVersion.version()
+        major, minor, patch = version.split(".")
+        ok = True
+        for constraint in self.pylith_version:
+            if not eval(f"{major}.{minor} {constraint}"):
+                ok = False
+                break
+        if not ok:
+            trait = self.inventory.getTrait("pylith_version")
+            self._validationError(context, trait, f"Installed PyLith version {version} does not meet"
+            f" version constraints {self.pylith_version}.")
 
     def _validationError(self, context, trait, msg):
         from pythia.pyre.inventory.Item import Item

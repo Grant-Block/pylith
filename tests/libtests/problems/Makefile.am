@@ -4,21 +4,19 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
 
-subpackage = problems
-include $(top_srcdir)/subpackage.am
-include $(top_srcdir)/check.am
+include $(top_srcdir)/tests/check_cppunit.am
 
 SUBDIRS = data
 
@@ -34,36 +32,29 @@ test_problems_SOURCES = \
 	TestSolutionFactory_Cases.cc \
 	TestProgressMonitor.cc \
 	TestProgressMonitorTime.cc \
-	test_driver.cc
+	TestProgressMonitorStep.cc \
+	$(top_srcdir)/tests/src/ProgressMonitorStub.cc \
+	$(top_srcdir)/tests/src/ObserverSolnStub.cc \
+	$(top_srcdir)/tests/src/ObserverPhysicsStub.cc \
+	$(top_srcdir)/tests/src/PhysicsImplementationStub.cc \
+	$(top_srcdir)/tests/src/StubMethodTracker.cc \
+	$(top_srcdir)/tests/src/FieldTester.cc \
+	$(top_srcdir)/tests/src/driver_cppunit.cc
 
 
 
-noinst_HEADERS = \
+dist_noinst_HEADERS = \
 	TestPhysics.hh \
 	TestObserversSoln.hh \
 	TestObserversPhysics.hh \
-	TestSolutionFactory.hh \
-	TestProgressMonitor.hh \
-	TestProgressMonitor.hh
+	TestSolutionFactory.hh
 
-AM_CPPFLAGS += \
-	$(PETSC_CC_INCLUDES) \
-	-I$(PYTHON_INCDIR) $(PYTHON_EGG_CPPFLAGS)
+noinst_TMP = \
+	progress.txt \
+	progress_time.txt \
+	progress_step.txt
 
-test_problems_LDFLAGS = \
-	$(AM_LDFLAGS) $(PYTHON_LA_LDFLAGS)
-
-test_problems_LDADD = \
-	-lcppunit -ldl \
-	$(top_builddir)/libsrc/pylith/libpylith.la \
-	-lspatialdata \
-	$(PETSC_LIB) $(PYTHON_BLDLIBRARY) $(PYTHON_LIBS) $(PYTHON_SYSLIBS)
-
-if ENABLE_CUBIT
-  test_problems_LDADD += -lnetcdf
-endif
-
-#CLEANFILES = $(noinst_tmp)
+export_datadir = $(abs_builddir)
 
 
 # End of file

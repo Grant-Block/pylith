@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -62,7 +62,19 @@ public:
              *
              * @returns Finite-element mesh.
              */
-            const pylith::topology::Mesh& mesh(void) const;
+            const pylith::topology::Mesh& getMesh(void) const;
+
+            /** Get PETSc DM associated with field.
+             *
+             * @returns PETSc DM
+             */
+            PetscDM getDM(void) const;
+
+            /** Get label for field.
+             *
+             * @returns Label for field.
+             */
+            const char* getLabel(void) const;
 
             /** Set label for field.
              *
@@ -70,11 +82,35 @@ public:
              */
             void setLabel(const char* value);
 
-            /** Get label for field.
+            /** Get local PetscSection.
              *
-             * @returns Label for field.
+             * @returns PETSc section.
              */
-            const char* getLabel(void) const;
+            PetscSection getLocalSection(void) const;
+
+            /** Get global PetscSection.
+             *
+             * @returns PETSc section.
+             */
+            PetscSection getGlobalSection(void) const;
+
+            /** Get the local PETSc Vec.
+             *
+             * @returns PETSc Vec object.
+             */
+            PetscVec getLocalVector(void) const;
+
+            /** Get the global PETSc Vec.
+             *
+             * @returns PETSc Vec object.
+             */
+            PetscVec getGlobalVector(void) const;
+
+            /** Get the global PETSc Vec without constrained degrees of freedom for output.
+             *
+             * @returns PETSc Vec object.
+             */
+            PetscVec getOutputVector(void) const;
 
             /** Get spatial dimension of domain.
              *
@@ -86,7 +122,7 @@ public:
              *
              * @returns the chart size.
              */
-            PetscInt chartSize(void) const;
+            PetscInt getChartSize(void) const;
 
             /** Get the number of degrees of freedom.
              *
@@ -94,22 +130,37 @@ public:
              */
             PetscInt getStorageSize(void) const;
 
-            /** Add subfield to current field.
+            /** Create discretization for field.
+             *
+             * @important Should be called for all fields after
+             * Field::subfieldsSetup() and before PetscDSAddBoundary() and
+             * Field::allocate().
+             */
+            void createDiscretization(void);
+
+            /// Allocate field and zero the local vector.
+            void allocate(void);
+
+            /// Zero local values (including constrained values).
+            void zeroLocal(void);
+
+            /** Add subfield to current field (for use from SWIG).
              *
              * Should be followed by calls to subfieldsSetup() and allocate().
              *
-             * @param[in] name Programatic name for subfield.
-             * @param[in] alias User-specified name for subfield.
+             * @param[in] name Programatic name of subfield.
+             * @param[in] alias User-specified alias for subfield.
              * @param[in] fieldType Type of vector field.
-             * @param[in] components Names of components in subfield.
-             * @param[in] numComponents Number of components in subfield.
-             * @param[in] basisOrder Polynomial order for basis.
-             * @param[in] quadOrder Order of quadrature rule.
+             * @param[in] components Array of names of field components.
+             * @param[in] numComponents Size of array.
+             * @param[in] scale Dimensional scale associated with field.
+             * @param[in] basisOrder Order of basis functions for discretization.
+             * @param[in] quadOrder Order of numerical quadrature for discretization.
              * @param[in] dimension Dimension of points for discretization.
+             * @param[in] isFaultOnly True if subfield is limited to fault degrees of freedom.
              * @param[in] cellBasis Type of basis functions to use (e.g., simplex, tensor, or default).
+             * @param[in] feSpace Finite-element space (POLYNOMIAL_SPACE or POINT_SPACE).
              * @param[in] isBasisContinuous True if basis is continuous.
-             * @param[in] feSpace Finite-element space (polynomial or point).
-             * @param[in] scale Scale for dimensionalizing field.
              */
             %apply(const char* const* string_list, const int list_len) {
                 (const char* components[], const int numComponents)
@@ -123,9 +174,10 @@ public:
                              const int basisOrder,
                              const int quadOrder,
                              const int dimension,
+                             const bool isFaultOnly,
                              const CellBasis cellBasis,
-                             const bool isBasisContinuous,
-                             const SpaceEnum feSpace);
+                             const SpaceEnum feSpace,
+                             const bool isBasisContinuous);
 
             %clear(const char* components[], const int numComponents);
 
@@ -135,11 +187,12 @@ public:
              */
             void subfieldsSetup(void);
 
-            /// Allocate field.
-            void allocate(void);
-
-            /// Zero section values (including constrained DOF).
-            void zeroLocal(void);
+            /** Does field have given subfield?
+             *
+             * @param name Name of subfield.
+             * @returns True if field has given subfield.
+             */
+            bool hasSubfield(const char* name) const;
 
             /** Print field to standard out.
              *

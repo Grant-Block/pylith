@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -23,48 +23,45 @@
  */
 
 namespace pylith {
-  namespace meshio {
+    namespace meshio {
+        class MeshIOAscii: public MeshIO
+        { // MeshIOAscii
+          // PUBLIC METHODS /////////////////////////////////////////////////
+public:
 
-    class MeshIOAscii : public MeshIO
-    { // MeshIOAscii
+            /// Constructor
+            MeshIOAscii(void);
 
-      // PUBLIC METHODS /////////////////////////////////////////////////
-    public :
+            /// Destructor
+            ~MeshIOAscii(void);
 
-      /// Constructor
-      MeshIOAscii(void);
+            /// Deallocate PETSc and local data structures.
+            void deallocate(void);
 
-      /// Destructor
-      ~MeshIOAscii(void);
+            /** Set filename for ASCII file.
+             *
+             * @param filename Name of file
+             */
+            void setFilename(const char* name);
 
-      /// Deallocate PETSc and local data structures.
-      void deallocate(void);
-  
-      /** Set filename for ASCII file.
-       *
-       * @param filename Name of file
-       */
-      void filename(const char* name);
-      
-      /** Get filename of ASCII file.
-       *
-       * @returns Name of file
-       */
-      const char* filename(void) const;
+            /** Get filename of ASCII file.
+             *
+             * @returns Name of file
+             */
+            const char* getFilename(void) const;
 
-      // PROTECTED METHODS //////////////////////////////////////////////
-    protected :
+            // PROTECTED METHODS //////////////////////////////////////////////
+protected:
 
-      /// Write mesh
-      void _write(void) const;
-      
-      /// Read mesh
-      void _read(void);
+            /// Write mesh
+            void _write(void) const;
 
-    }; // MeshIOAscii
+            /// Read mesh
+            void _read(void);
 
-  } // meshio
+        }; // MeshIOAscii
+
+    } // meshio
 } // pylith
 
-
-// End of file 
+// End of file

@@ -2,21 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/problems/Physics.py
-#
-# @brief Python abstract base class for objects definitng physics, such as behavior of a bulk material,
-# boundary condition, interface or constraint.
 
 from pylith.utils.PetscComponent import PetscComponent
 from .problems import Physics as ModulePhysics
@@ -24,8 +19,6 @@ from .problems import Physics as ModulePhysics
 from pylith.meshio.OutputPhysics import OutputPhysics
 from pylith.utils.NullComponent import NullComponent
 
-
-# Factories for items in facility arrays
 
 def observerFactory(name):
     """Factory for output items.
@@ -36,7 +29,8 @@ def observerFactory(name):
 
 
 class Physics(PetscComponent, ModulePhysics):
-    """Python abstract base class for objects defining physics.
+    """
+    Abstract base class for objects defining physics.
     """
     import pythia.pyre.inventory
 
@@ -61,13 +55,10 @@ class Physics(PetscComponent, ModulePhysics):
         "observers", itemFactory=observerFactory, factory=SinglePhysicsObserver)
     observers.meta['tip'] = "Observers (e.g., output)."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
     def __init__(self, name="physics", facility="physics"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility)
-        return
 
     def preinitialize(self, problem):
         """Do pre-initialization setup.
@@ -75,6 +66,7 @@ class Physics(PetscComponent, ModulePhysics):
         self._createModuleObj()
         identifier = self.aliases[-1]
         ModulePhysics.setIdentifier(self, identifier)
+        ModulePhysics.setNormalizer(self, problem.normalizer)
 
         if not isinstance(self.auxiliaryFieldDB, NullComponent):
             ModulePhysics.setAuxiliaryFieldDB(self, self.auxiliaryFieldDB)
@@ -88,7 +80,7 @@ class Physics(PetscComponent, ModulePhysics):
                 quadOrder = subfield.quadOrder
             ModulePhysics.setAuxiliarySubfieldDiscretization(self, fieldName, subfield.basisOrder, quadOrder,
                                                              subfield.dimension, subfield.cellBasis,
-                                                             subfield.isBasisContinuous, subfield.feSpace)
+                                                             subfield.feSpace, subfield.isBasisContinuous)
 
         for subfield in self.derivedSubfields.components():
             fieldName = subfield.aliases[-1]
@@ -99,14 +91,11 @@ class Physics(PetscComponent, ModulePhysics):
                 quadOrder = subfield.quadOrder
             ModulePhysics.setDerivedSubfieldDiscretization(self, fieldName, subfield.basisOrder, quadOrder,
                                                            subfield.dimension, subfield.cellBasis,
-                                                           subfield.isBasisContinuous, subfield.feSpace)
+                                                           subfield.feSpace, subfield.isBasisContinuous)
 
         for observer in self.observers.components():
             observer.preinitialize(problem, identifier)
             ModulePhysics.registerObserver(self, observer)
-        return
-
-# PRIVATE METHODS ////////////////////////////////////////////////////
 
     def _createModuleObj(self):
         """Call constructor for module object for access to C++ object.

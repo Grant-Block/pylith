@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -209,7 +209,7 @@ pylith::bc::DirichletTimeDependent::verifyConfiguration(const pylith::topology::
         throw std::runtime_error(msg.str());
     } // if
 
-    const topology::Field::SubfieldInfo& info = solution.subfieldInfo(_subfieldName.c_str());
+    const topology::Field::SubfieldInfo& info = solution.getSubfieldInfo(_subfieldName.c_str());
     const int numComponents = info.description.numComponents;
     const int numConstrained = _constrainedDOF.size();
     for (int iConstrained = 0; iConstrained < numConstrained; ++iConstrained) {
@@ -238,20 +238,26 @@ pylith::bc::DirichletTimeDependent::createIntegrator(const pylith::topology::Fie
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Create constraint and set kernels.
-pylith::feassemble::Constraint*
-pylith::bc::DirichletTimeDependent::createConstraint(const pylith::topology::Field& solution) {
+std::vector<pylith::feassemble::Constraint*>
+pylith::bc::DirichletTimeDependent::createConstraints(const pylith::topology::Field& solution) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_COMPONENT_DEBUG("createConstraint(solution="<<solution.getLabel()<<")");
+    PYLITH_COMPONENT_DEBUG("createConstraints(solution="<<solution.getLabel()<<")");
 
+    std::vector<pylith::feassemble::Constraint*> constraintArray;
     pylith::feassemble::ConstraintSpatialDB* constraint = new pylith::feassemble::ConstraintSpatialDB(this);assert(constraint);
-    constraint->setMarkerLabel(getMarkerLabel());
-    constraint->setConstrainedDOF(&_constrainedDOF[0], _constrainedDOF.size());
+
     constraint->setSubfieldName(_subfieldName.c_str());
+    constraint->setLabelName(getLabelName());
+    constraint->setLabelValue(getLabelValue());
+    constraint->setConstrainedDOF(&_constrainedDOF[0], _constrainedDOF.size());
 
     _DirichletTimeDependent::setKernelConstraint(constraint, *this, solution);
 
-    PYLITH_METHOD_RETURN(constraint);
-} // createConstraint
+    constraintArray.resize(1);
+    constraintArray[0] = constraint;
+
+    PYLITH_METHOD_RETURN(constraintArray);
+} // createConstraints
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -268,7 +274,7 @@ pylith::bc::DirichletTimeDependent::createAuxiliaryField(const pylith::topology:
     assert(_auxiliaryFactory);
     assert(_normalizer);
     _auxiliaryFactory->initialize(auxiliaryField, *_normalizer, solution.getSpaceDim(),
-                                  &solution.subfieldInfo(_subfieldName.c_str()).description);
+                                  &solution.getSubfieldInfo(_subfieldName.c_str()).description);
 
     // :ATTENTION: The order of the factory methods must match the order of the auxiliary subfields in the FE kernels.
 
@@ -359,7 +365,7 @@ pylith::bc::_DirichletTimeDependent::setKernelConstraint(pylith::feassemble::Con
 
     PetscBdPointFunc bcKernel = NULL;
 
-    const pylith::topology::Field::VectorFieldEnum fieldType = solution.subfieldInfo(bc.getSubfieldName()).description.vectorFieldType;
+    const pylith::topology::Field::VectorFieldEnum fieldType = solution.getSubfieldInfo(bc.getSubfieldName()).description.vectorFieldType;
     const bool isScalarField = fieldType == pylith::topology::Field::SCALAR;
 
     const int bitInitial = bc.useInitial() ? 0x1 : 0x0;
@@ -368,32 +374,32 @@ pylith::bc::_DirichletTimeDependent::setKernelConstraint(pylith::feassemble::Con
     const int bitUse = bitInitial | bitRate | bitTimeHistory;
     switch (bitUse) {
     case 0x1:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initial_scalar :
-                   pylith::fekernels::TimeDependentFn::initial_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initial_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::initial_vector_boundary;
         break;
     case 0x2:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::rate_scalar :
-                   pylith::fekernels::TimeDependentFn::rate_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::rate_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::rate_vector_boundary;
         break;
     case 0x4:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::timeHistory_scalar :
-                   pylith::fekernels::TimeDependentFn::timeHistory_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::timeHistory_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::timeHistory_vector_boundary;
         break;
     case 0x3:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initialRate_scalar :
-                   pylith::fekernels::TimeDependentFn::initialRate_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initialRate_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::initialRate_vector_boundary;
         break;
     case 0x5:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initialTimeHistory_scalar :
-                   pylith::fekernels::TimeDependentFn::initialTimeHistory_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initialTimeHistory_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::initialTimeHistory_vector_boundary;
         break;
     case 0x6:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::rateTimeHistory_scalar :
-                   pylith::fekernels::TimeDependentFn::rateTimeHistory_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::rateTimeHistory_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::rateTimeHistory_vector_boundary;
         break;
     case 0x7:
-        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initialRateTimeHistory_scalar :
-                   pylith::fekernels::TimeDependentFn::initialRateTimeHistory_vector;
+        bcKernel = (isScalarField) ? pylith::fekernels::TimeDependentFn::initialRateTimeHistory_scalar_boundary :
+                   pylith::fekernels::TimeDependentFn::initialRateTimeHistory_vector_boundary;
         break;
     case 0x0: {
         pythia::journal::warning_t warning(_DirichletTimeDependent::pyreComponent);

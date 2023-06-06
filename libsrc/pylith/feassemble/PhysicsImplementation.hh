@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -59,6 +59,18 @@ public:
      */
     virtual
     const pylith::topology::Mesh& getPhysicsDomainMesh(void) const = 0;
+
+    /** Get name of label marking material.
+     *
+     * @returns Name of label for material (from mesh generator).
+     */
+    const char* getPhysicsLabelName(void) const;
+
+    /** Get value of label marking material.
+     *
+     * @returns Value of label for material (from mesh generator).
+     */
+    int getPhysicsLabelValue(void) const;
 
     /** Get auxiliary field.
      *

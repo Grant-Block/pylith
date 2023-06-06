@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -24,7 +24,7 @@
 
 namespace pylith {
     namespace meshio {
-        class OutputSolnBoundary : public pylith::meshio::OutputSoln {
+        class OutputSolnBoundary: public pylith::meshio::OutputSoln {
             // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////
 public:
 
@@ -34,11 +34,17 @@ public:
             /// Destructor
             virtual ~OutputSolnBoundary(void);
 
-            /** Set label identifier for subdomain.
+            /** Set name of label identifier for subdomain.
              *
-             * @param[in] value Label of subdomain.
+             * @param[in] value Name of label for subdomain.
              */
-            void setLabel(const char* value);
+            void setLabelName(const char* value);
+
+            /** Set value of label identifier for subdomain.
+             *
+             * @param[in] value Value of label for subdomain.
+             */
+            void setLabelValue(const int value);
 
             /** Verify configuration.
              *

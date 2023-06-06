@@ -2,23 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2015 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/problems/SolutionSubfield.py
-#
-# @brief Python object for defining attributes of a subfield within a
-# field.
-#
-# Factory: soln_subfield.
 
 from pylith.topology.Subfield import Subfield
 
@@ -35,18 +28,15 @@ def validateAlias(value):
 
 
 class SolutionSubfield(Subfield):
-    """Python object for defining attributes of a subfield within a field.
-
-    FACTORY: soln_subfield
+    """
+    Base class for defining attributes of a subfield within a field.
     """
 
     import pythia.pyre.inventory
 
-    # Override userAlias in derived class with appropriate default.
+    # Set appropriate default in derived class using _defaults().
     userAlias = pythia.pyre.inventory.str("alias", default="", validator=validateAlias)
     userAlias.meta['tip'] = "Name for subfield."
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
 
     def __init__(self, name="solution_subfield"):
         """Constructor.
@@ -57,22 +47,18 @@ class SolutionSubfield(Subfield):
         self.fieldComponents = None
         self.vectorFieldType = None
         self.scale = None
-        return
+        self.isFaultOnly = False
 
     def initialize(self, normalizer, spaceDim):
         """Initialize subfield metadata.
         """
         raise NotImplementedError("Implement in derived class.")
 
-    # PRIVATE METHODS ////////////////////////////////////////////////////
-
     def _configure(self):
         """Set members based using inventory.
         """
         from pylith.topology.topology import FieldBase
-
         Subfield._configure(self)
-        return
 
     def _setComponents(self, spaceDim):
         from pylith.topology.Field import Field
@@ -84,7 +70,6 @@ class SolutionSubfield(Subfield):
             self.componentNames = ["{}_{}".format(self.userAlias, label) for label in labels[:spaceDim]]
         else:
             raise NotImplementedError("Not implemented for vector field type %d" % self.vectorFieldType)
-        return
 
 
 # ITEM FACTORIES ///////////////////////////////////////////////////////

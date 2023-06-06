@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -20,19 +20,19 @@
 
 #include "TestPhysics.hh" // Implementation of class methods
 
-#include "pylith/testing/PhysicsStub.hh" // USES PhysicsStub
+#include "tests/src/PhysicsStub.hh" // USES PhysicsStub
+#include "tests/src/ObserverPhysicsStub.hh" // USES ObserversPhysicsStub
+#include "tests/src/StubMethodTracker.hh" // USES StubMethodTracker
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/Field.hh" // USES Field
 #include "pylith/feassemble/AuxiliaryFactory.hh" // USES AuxiliaryFactory
 #include "pylith/utils/types.hh" // USES PylithReal
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 
-#include "pylith/testing/ObserverPhysicsStub.hh" // USES ObserversPhysicsStub
 #include "pylith/problems/ObserversPhysics.hh" // USES ObserversPhysics
 
 #include "spatialdata/spatialdb/UniformDB.hh" // USES UniformDB
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
-
-#include "pylith/testing/StubMethodTracker.hh" // USES StubMethodTracker
 
 // ---------------------------------------------------------------------------------------------------------------------
 CPPUNIT_TEST_SUITE_REGISTRATION(pylith::problems::TestPhysics);
@@ -104,8 +104,8 @@ pylith::problems::TestPhysics::testSetAuxiliarySubfieldDiscretization(void) {
     PYLITH_METHOD_BEGIN;
 
     CPPUNIT_ASSERT(_physics);
-    _physics->setAuxiliarySubfieldDiscretization("fieldA", 1, 2, 3, true, pylith::topology::Field::POLYNOMIAL_SPACE);
-    _physics->setAuxiliarySubfieldDiscretization("fieldB", 2, 3, 4, false, pylith::topology::Field::POINT_SPACE);
+    _physics->setAuxiliarySubfieldDiscretization("fieldA", 1, 2, 3, pylith::topology::Field::DEFAULT_BASIS, pylith::topology::Field::POLYNOMIAL_SPACE, true);
+    _physics->setAuxiliarySubfieldDiscretization("fieldB", 2, 3, 4, pylith::topology::Field::DEFAULT_BASIS, pylith::topology::Field::POINT_SPACE, true);
 
     const pylith::feassemble::AuxiliaryFactory* factory = _physics->_getAuxiliaryFactory();CPPUNIT_ASSERT(factory);
 

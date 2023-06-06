@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -80,22 +80,6 @@ public:
      */
     void addAuxiliarySubfields(void);
 
-    // ============================ Either Side ====================================
-    // ---------------------------------------------------------------------------------------------------------------------
-    // Get stress kernel for RHS residual, G(t,s).
-    PetscPointFunc getKernelResidualStress(const spatialdata::geocoords::CoordSys* coordsys,
-                                           const bool _useInertia) const;
-
-    /** Get pressure kernel for RHS residual, G(t,s).
-     *
-     * @param[in] coordsys Coordinate system.
-     *
-     * @return RHS residual kernel for Darcy velocity.
-     */
-    PetscPointFunc getKernelDarcy(const spatialdata::geocoords::CoordSys* coordsys,
-                                  const bool _gravityField,
-                                  const bool _useInertia) const;
-
     // ============================= RHS ==================================== //
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -144,6 +128,7 @@ public:
      * @return LHS residual kernel for Darcy velocity.
      */
     PetscPointFunc getKernelf1p_implicit(const spatialdata::geocoords::CoordSys* coordsys,
+                                         const bool _useBodyForce,
                                          const bool _gravityField) const;
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -170,6 +155,12 @@ public:
     // Get biot coefficient kernel for LHS Jacobian F(t,s, \dot{s}).
     PetscPointJac getKernelJf0pe(const spatialdata::geocoords::CoordSys* coordsys) const;
 
+    // ---------------------------------------------------------------------------------------------------------------------
+    PetscPointJac getKernelJf0ppdot(const spatialdata::geocoords::CoordSys* coordsys) const;
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    PetscPointJac getKernelJf0pedot(const spatialdata::geocoords::CoordSys* coordsys) const;
+
     // ============================ DERIVED FIELDS ========================== //
 
     /** Get stress kernel for derived field.
@@ -179,6 +170,34 @@ public:
      * @return Project kernel for computing stress subfield in derived field.
      */
     PetscPointFunc getKernelDerivedCauchyStress(const spatialdata::geocoords::CoordSys* coordsys) const;
+
+    /** Update kernel constants.
+     *
+     * @param[inout] kernelConstants Array of constants used in integration kernels.
+     * @param[in] dt Current time step.
+     */
+    void updateKernelConstants(pylith::real_array* kernelConstants,
+                               const PylithReal dt) const;
+
+    /** Add kernels for updating state variables, implicit.
+     *
+     * @param[inout] kernels Array of kernels for updating state variables.
+     * @param[in] coordsys Coordinate system.
+     * @param[in] _useStateVars Update kernels?
+     */
+    void addKernelsUpdateStateVarsImplicit(std::vector<pylith::feassemble::IntegratorDomain::ProjectKernels>* kernels,
+                                   const spatialdata::geocoords::CoordSys* coordsys,
+                                   const bool _useStateVars) const;
+
+    /** Add kernels for updating state variables, explicit.
+     *
+     * @param[inout] kernels Array of kernels for updating state variables.
+     * @param[in] coordsys Coordinate system.
+     * @param[in] _useStateVars Update kernels?
+     */
+    void addKernelsUpdateStateVarsExplicit(std::vector<pylith::feassemble::IntegratorDomain::ProjectKernels>* kernels,
+                                   const spatialdata::geocoords::CoordSys* coordsys,
+                                   const bool _useStateVars) const;
 
     // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////////////
 protected:

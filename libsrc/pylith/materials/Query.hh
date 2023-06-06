@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -33,7 +33,7 @@
 class pylith::materials::Query {
     friend class TestQuery; // unit testing
 
-    // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC METHODS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /** Setup subfield query in auxiliary factory for shear modulus from density and Vs.
@@ -101,10 +101,9 @@ public:
      */
     static
     void biotModulusFromInput(const char* subfieldName,
-                            pylith::feassemble::AuxiliaryFactory* factory);
+                              pylith::feassemble::AuxiliaryFactory* factory);
 
-
-    // NOT IMPLEMENTED //////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     Query(void); ///< Not implemented

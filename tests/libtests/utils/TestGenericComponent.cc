@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -60,6 +60,7 @@ public:
             void test(void) {
                 PYLITH_JOURNAL_DEBUG("CORRECT: This is a debug message.");
                 PYLITH_JOURNAL_INFO("CORRECT: This is an info mesasge.");
+                PYLITH_JOURNAL_INFO_ROOT("CORRECT: This is an info mesasge.");
                 PYLITH_JOURNAL_WARNING("CORRECT: This is a warning mesasge.");
                 PYLITH_JOURNAL_ERROR("CORRECT: This is an error mesage.");
             } // testJournals

@@ -2,19 +2,19 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
 
-include $(top_srcdir)/check.am
+include $(top_srcdir)/tests/check_cppunit.am
 
 TESTS = test_pylith.py
 
@@ -24,15 +24,17 @@ dist_noinst_PYTHON = \
 	apps/__init__.py \
 	apps/TestPetscApplication.py \
 	apps/TestPyLithApp.py \
-	apps/TestEqInfoAPp.py \
+	apps/TestEqInfoApp.py \
 	bc/__init__.py \
 	bc/TestDirichletTimeDependent.py \
 	bc/TestNeumannTimeDependent.py \
 	bc/TestAbsorbingDampers.py \
 	bc/TestAuxiliarySubfields.py \
 	bc/TestZeroDB.py \
+	faults/__init__.py \
 	faults/TestFaultCohesive.py \
 	faults/TestFaultCohesiveKin.py \
+	faults/TestFaultCohesiveImpulses.py \
 	faults/TestKinSrc.py \
 	faults/TestKinSrcConstRate.py \
 	faults/TestKinSrcStep.py \
@@ -40,13 +42,16 @@ dist_noinst_PYTHON = \
 	faults/TestKinSrcBrune.py \
 	faults/TestKinSrcLiuCos.py \
 	faults/TestKinSrcTimeHistory.py \
-	faults/SingleRupture.py \
+	faults/TestSingleRupture.py \
 	materials/__init__.py \
+	materials/TestAuxiliarySubfields.py \
+	materials/TestDerivedSubfields.py \
 	materials/TestElasticity.py \
 	materials/TestHomogeneous.py \
 	materials/TestIncompressibleElasticity.py \
 	materials/TestMaterial.py \
 	materials/TestPoroelasticity.py \
+	materials/TestRheologies.py \
 	materials/TestRheologyLinearElasticity.py \
 	materials/TestRheologyPoroelasticity.py \
 	materials/TestRheologyViscoelasticity.py \
@@ -54,9 +59,79 @@ dist_noinst_PYTHON = \
 	meshio/TestDataWriter.py \
 	meshio/TestDataWriterHDF5.py \
 	meshio/TestDataWriterHDF5Ext.py \
-	meshio/TestDataWRiterVTK.py \
-	meshio/TestXdmf.py
-
+	meshio/TestDataWriterVTK.py \
+	meshio/TestMeshIOAscii.py \
+	meshio/TestMeshIOCubit.py \
+	meshio/TestMeshIOLagrit.py \
+	meshio/TestOutputManagerMesh.py \
+	meshio/TestOutputManagerSubmesh.py \
+	meshio/TestOutputObserver.py \
+	meshio/TestOutputPhysics.py \
+	meshio/TestOutputSoln.py \
+	meshio/TestOutputSolnBoundary.py \
+	meshio/TestOutputSolnDomain.py \
+	meshio/TestOutputSolnPoints.py \
+	meshio/TestOutputSolnSubset.py \
+	meshio/TestOutputTrigger.py \
+	meshio/TestOutputTriggerStep.py \
+	meshio/TestOutputTriggerTime.py \
+	meshio/TestPointsList.py \
+	meshio/TestSingleOutput.py \
+	meshio/TestXdmf.py \
+	mpi/__init__.py \
+	mpi/TestCommunicator.py \
+	mpi/TestReduce.py \
+	problems/__init__.py \
+	problems/TestInitialCondition.py \
+	problems/TestInitialConditionDomain.py \
+	problems/TestInitialConditionPatch.py \
+	problems/TestPhysics.py \
+	problems/TestProblem.py \
+	problems/TestProblemDefaults.py \
+	problems/TestProgressMonitor.py \
+	problems/TestProgressMonitorTime.py \
+	problems/TestSingleObserver.py \
+	problems/TestSolnDisp.py \
+	problems/TestSolnDispLagrange.py \
+	problems/TestSolnDispPres.py \
+	problems/TestSolnDispPresLagrange.py \
+	problems/TestSolnDispTracStrain.py \
+	problems/TestSolnDispVel.py \
+	problems/TestSolnDispVelLagrange.py \
+	problems/TestSolution.py \
+	problems/TestSolutionSubfield.py \
+	problems/TestSolutionSubfields.py \
+	problems/TestSubfieldDisplacement.py \
+	problems/TestSubfieldLagrangeFault.py \
+	problems/TestSubfieldPressure.py \
+	problems/TestSubfieldTemperature.py \
+	problems/TestSubfieldTraceStrain.py \
+	problems/TestSubfieldVelocity.py \
+	problems/TestTimeDependent.py \
+	topology/__init__.py \
+	topology/TestDistributor.py \
+	topology/TestField.py \
+	topology/TestMesh.py \
+	topology/TestMeshGenerator.py \
+	topology/TestMeshImporter.py \
+	topology/TestMeshRefiner.py \
+	topology/TestRefineUniform.py \
+	topology/TestReverseCuthillMcKee.py \
+	topology/TestSubfield.py \
+	utils/__init__.py \
+	utils/TestCollectVersionInfo.py \
+	utils/TestConstants.py \
+	utils/TestDependenciesVersion.py \
+	utils/TestDumpParameters.py \
+	utils/TestDumpParametersAscii.py \
+	utils/TestDumpParametersJson.py \
+	utils/TestEmptyBin.py \
+	utils/TestEventLogger.py \
+	utils/TestNullComponent.py \
+	utils/TestPetscManager.py \
+	utils/TestPetscVersion.py \
+	utils/TestProfiling.py \
+	utils/TestPylithVersion.py
 
 dist_noinst_DATA = \
 	meshio/data/tri3.h5 \
@@ -158,16 +233,9 @@ noinst_TMP = \
 	meshio/hex8_surf_vertex.xmf \
 	meshio/hex8_surf_cell.xmf
 
-# 'export' the input files by performing a mock install
-export_datadir = $(abs_top_builddir)/tests/pytests
-export-data: $(dist_noinst_DATA)
-	if [ "X$(abs_top_srcdir)" != "X$(abs_top_builddir)" ]; then for f in $(dist_noinst_DATA); do $(install_sh_DATA) $(srcdir)/$$f $(export_datadir)/$$f; done; fi
 
-clean-data:
-	if [ "X$(abs_top_srcdir)" != "X$(abs_top_builddir)" ]; then for f in $(dist_noinst_DATA) $(noinst_TMP); do $(RM) $(RM_FLAGS) $(export_datadir)/$$f; done; fi
-
-BUILT_SOURCES = export-data
-clean-local: clean-data
+export_datadir = $(abs_builddir)
+include $(top_srcdir)/tests/data.am
 
 
 # End of file 

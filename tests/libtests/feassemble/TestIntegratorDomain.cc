@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -19,6 +19,7 @@
 #include <portinfo>
 
 #include "TestIntegratorDomain.hh" // Implementation of class methods
+#include "tests/src/FieldTester.hh" // USES FieldTester
 
 #include "pylith/feassemble/IntegratorDomain.hh" // USES IntegratorDomain
 
@@ -30,7 +31,6 @@
 #include "pylith/feassemble/AuxiliaryFactory.hh" // USES AuxiliaryFactory
 #include "pylith/problems/SolutionFactory.hh" // USES SolutionFactory
 #include "pylith/meshio/MeshIOAscii.hh" // USES MeshIOAscii
-#include "pylith/testing/FieldTester.hh" // USES FieldTester
 #include "pylith/utils/error.hh" // USES PYLITH_METHOD_BEGIN/END
 #include "pylith/utils/journals.hh" // pythia::journal
 
@@ -88,7 +88,7 @@ pylith::feassemble::TestIntegratorDomain::testAccessors(void) {
 
     CPPUNIT_ASSERT(_data);
     CPPUNIT_ASSERT_EQUAL_MESSAGE("Test of default label name failed.",
-                                 std::string("material-id"), std::string(_integrator->getLabelName()));
+                                 std::string(pylith::topology::Mesh::cells_label_name), std::string(_integrator->getLabelName()));
     const std::string& labelName = "material-label";
     _integrator->setLabelName(labelName.c_str());
     CPPUNIT_ASSERT_EQUAL_MESSAGE("Test of custom label name failed.",
@@ -181,19 +181,19 @@ pylith::feassemble::TestIntegratorDomain::testPoststep(void) {
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Test updateState().
+// Test setState().
 void
-pylith::feassemble::TestIntegratorDomain::testUpdateState(void) {
+pylith::feassemble::TestIntegratorDomain::testSetState(void) {
     PYLITH_METHOD_BEGIN;
 
     CPPUNIT_ASSERT(_integrator);
     CPPUNIT_ASSERT(_data);
-    _integrator->updateState(_data->t);
+    _integrator->setState(_data->t);
 
-    // Nothing to check. updateState() should not do anything.
+    // Nothing to check. setState() should not do anything.
 
     PYLITH_METHOD_END;
-} // testUpdateState
+} // testSetState
 
 
 // ---------------------------------------------------------------------------------------------------------------------

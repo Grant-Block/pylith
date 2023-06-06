@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -29,23 +29,24 @@
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
 #include "spatialdata/spatialdb/GravityField.hh" // USES GravityField
 
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL*
 
 #include <cassert>
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::materials::AuxiliaryFactoryViscoelastic::AuxiliaryFactoryViscoelastic(void) {
     GenericComponent::setName("auxiliaryfactoryviscoelastic");
 } // constructor
 
 
-// ----------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::materials::AuxiliaryFactoryViscoelastic::~AuxiliaryFactoryViscoelastic(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add Maxwell time subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addMaxwellTime(void) {
@@ -72,7 +73,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addMaxwellTime(void) {
 } // addMaxwellTime
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add Maxwell time subfield for Generalized Maxwell model to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addMaxwellTimeGeneralizedMaxwell(void) {
@@ -106,7 +107,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addMaxwellTimeGeneralizedMaxwel
 } // addMaxwellTimeGeneralizedMaxwell
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add shear modulus ratio subfield for generalized Maxwell model to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addShearModulusRatioGeneralizedMaxwell(void) {
@@ -136,7 +137,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addShearModulusRatioGeneralized
 } // addShearModulusRatioGeneralizedMaxwell
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add power-law reference strain rate subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addPowerLawReferenceStrainRate(void) {
@@ -163,7 +164,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addPowerLawReferenceStrainRate(
 } // addPowerLawReferenceStrainRate
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add power-law reference stress subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addPowerLawReferenceStress(void) {
@@ -190,7 +191,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addPowerLawReferenceStress(void
 } // addPowerLawReferenceStress
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add power-law exponenet subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addPowerLawExponent(void) {
@@ -216,7 +217,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addPowerLawExponent(void) {
 } // addPowerLawExponent
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add total strain subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addTotalStrain(void) {
@@ -255,28 +256,29 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addTotalStrain(void) {
 } // addTotalStrain
 
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Add stress subfield to auxiliary fields.
+// ------------------------------------------------------------------------------------------------
+// Add deviatoric stress subfield to auxiliary fields.
 void
-pylith::materials::AuxiliaryFactoryViscoelastic::addStress(void) {
+pylith::materials::AuxiliaryFactoryViscoelastic::addDeviatoricStress(void) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_JOURNAL_DEBUG("addStress(void)");
+    PYLITH_JOURNAL_DEBUG("addDeviatoricStress(void)");
 
-    const char* subfieldName = "stress";
+    const char* subfieldName = "deviatoric_stress";
     const char* componentNames[6] = {
-        "stress_xx",
-        "stress_yy",
-        "stress_zz",
-        "stress_xy",
-        "stress_yz",
-        "stress_xz"
+        "deviatoric_stress_xx",
+        "deviatoric_stress_yy",
+        "deviatoric_stress_zz",
+        "deviatoric_stress_xy",
+        "deviatoric_stress_yz",
+        "deviatoric_stress_xz"
     };
     const int stressSize = (3 == _spaceDim) ? 6 : (2 == _spaceDim) ? 4 : 1;
+    const PylithReal pressureScale = _normalizer->getPressureScale();
 
     pylith::topology::Field::Description description;
     description.label = subfieldName;
     description.alias = subfieldName;
-    description.vectorFieldType = pylith::topology::Field::OTHER;
+    description.vectorFieldType = (3 == _spaceDim) ? pylith::topology::Field::TENSOR : pylith::topology::Field::OTHER;
     description.numComponents = stressSize;
     description.componentNames.resize(stressSize);
     description.hasHistory = true;
@@ -284,17 +286,17 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addStress(void) {
     for (int i = 0; i < stressSize; ++i) {
         description.componentNames[i] = componentNames[i];
     } // for
-    description.scale = 1.0;
+    description.scale = pressureScale;
     description.validator = NULL;
 
     _field->subfieldAdd(description, getSubfieldDiscretization(subfieldName));
     this->setSubfieldQuery(subfieldName);
 
     PYLITH_METHOD_END;
-} // addStress
+} // addDeviatoricStress
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add viscous strain subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addViscousStrain(void) {
@@ -315,7 +317,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addViscousStrain(void) {
     pylith::topology::Field::Description description;
     description.label = subfieldName;
     description.alias = subfieldName;
-    description.vectorFieldType = pylith::topology::Field::OTHER;
+    description.vectorFieldType = (3 == _spaceDim) ? pylith::topology::Field::TENSOR : pylith::topology::Field::OTHER;
     description.numComponents = strainSize;
     description.componentNames.resize(strainSize);
     description.hasHistory = true;
@@ -333,7 +335,7 @@ pylith::materials::AuxiliaryFactoryViscoelastic::addViscousStrain(void) {
 } // addViscousStrain
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add Generalized Maxwell viscous strain subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryViscoelastic::addViscousStrainGeneralizedMaxwell(void) {

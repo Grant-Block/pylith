@@ -4,24 +4,24 @@ dnl ----------------------------------------------------------------------
 dnl
 dnl Brad T. Aagaard, U.S. Geological Survey
 dnl Charles A. Williams, GNS Science
-dnl Matthew G. Knepley, University of Chicago
+dnl Matthew G. Knepley, University at Buffalo
 dnl
 dnl This code was developed as part of the Computational Infrastructure
 dnl for Geodynamics (http://geodynamics.org).
 dnl
-dnl Copyright (c) 2010-2017 University of California, Davis
+dnl Copyright (c) 2010-2022 University of California, Davis
 dnl
-dnl See COPYING for license information.
+dnl See LICENSE.md for license information.
 dnl
 dnl ----------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([PyLith], [3.0.0beta2], [cig-short@geodynamics.org])
+AC_INIT([PyLith], [3.0.3], [https://geodynamics.org/resources/pylith])
 AC_CONFIG_AUX_DIR([./aux-config])
 AC_CONFIG_HEADER([portinfo])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-pax])
 
 dnl ----------------------------------------------------------------------
 dnl PYTHON
@@ -38,7 +38,7 @@ AM_CONDITIONAL([ENABLE_SWIG], [test "$enable_swig" = yes])
 
 dnl TESTING w/cppunit and Python unittest
 AC_ARG_ENABLE([testing],
-	[  --enable-testing        Enable unit testing with cppunit (requires cppunit) [[default=no]]],
+	[  --enable-testing        Enable unit testing with CppUnit (requires CppUnit) [[default=no]]],
 	[if test "$enableval" = yes ; then enable_testing=yes; else enable_testing=no; fi],
 	[enable_testing=no])
 AM_CONDITIONAL([ENABLE_TESTING], [test "$enable_testing" = yes])
@@ -92,7 +92,7 @@ AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 
-AX_CXX_COMPILE_STDCXX(11)
+AX_CXX_COMPILE_STDCXX(14)
 
 dnl PYTHON/PYTHIA (nemesis must be set before python)
 CIT_PATH_NEMESIS
@@ -109,7 +109,7 @@ AC_CHECK_HEADER([mpi.h], [], [AC_MSG_ERROR([header 'mpi.h' not found])])
 
 dnl PETSC
 AC_LANG(C)
-CIT_PATH_PETSC([3.15.0])
+CIT_PATH_PETSC([3.19.1])
 CIT_HEADER_PETSC
 CIT_CHECK_LIB_PETSC
 
@@ -119,6 +119,7 @@ AC_SYS_LARGEFILE
 dnl NUMPY
 CIT_NUMPY_PYTHON_MODULE
 CIT_NUMPY_INCDIR
+CIT_PYTHON_MODULE([numpy],[1.20.0])
 
 dnl SWIG
 if test "$enable_swig" = "yes" ; then
@@ -129,6 +130,8 @@ dnl CPPUNIT
 if test "$enable_testing" = "yes" ; then
   CIT_CPPUNIT_HEADER
   CIT_CPPUNIT_LIB
+  CIT_CATCH2_HEADER
+  CIT_CATCH2_LIB
 fi
 
 dnl CUBIT (netcdf)
@@ -144,8 +147,7 @@ if test "$enable_hdf5" = "yes" ; then
   CIT_HDF5_LIB
   CIT_HDF5_LIB_PARALLEL
 
-  CIT_PYTHON_MODULE([six],[1.0.0])
-  CIT_PYTHON_MODULE([h5py],[2.0.0])
+  CIT_PYTHON_MODULE([h5py],[3.0.0])
 fi
 
 dnl PROJ
@@ -180,7 +182,7 @@ CIT_FUNCTIONSTRING
 dnl VERSION
 CIG_PKG_GIT(PYLITH)
 AC_DEFINE_UNQUOTED([PYLITH_VERSION], ["$PACKAGE_VERSION"], [Define PyLith version])
-AC_DEFINE_UNQUOTED([PYLITH_DOI], ["10.5281/zenodo.886600"], [Define PyLith doi])
+AC_DEFINE_UNQUOTED([PYLITH_DOI], ["10.5281/zenodo.7072811"], [Define PyLith doi])
 
 dnl ENDIANNESS
 AC_C_BIGENDIAN
@@ -198,8 +200,8 @@ AC_CONFIG_FILES([Makefile
 		libsrc/pylith/materials/Makefile
 		libsrc/pylith/meshio/Makefile
 		libsrc/pylith/problems/Makefile
-		libsrc/pylith/testing/Makefile
 		libsrc/pylith/topology/Makefile
+		libsrc/pylith/testing/Makefile
 		libsrc/pylith/utils/Makefile
 		modulesrc/Makefile
 		modulesrc/include/Makefile
@@ -214,6 +216,7 @@ AC_CONFIG_FILES([Makefile
 		modulesrc/topology/Makefile
 		modulesrc/utils/Makefile
 		tests/Makefile
+		tests/src/Makefile
 		tests/libtests/Makefile
 		tests/libtests/bc/Makefile
 		tests/libtests/bc/data/Makefile
@@ -235,17 +238,26 @@ AC_CONFIG_FILES([Makefile
 		tests/libtests/utils/Makefile
 		tests/pytests/Makefile
 		tests/mmstests/Makefile
-		tests/mmstests/elasticity/Makefile
+		tests/mmstests/linearelasticity/Makefile
+		tests/mmstests/linearelasticity/nofaults-2d/Makefile
+		tests/mmstests/linearelasticity/nofaults-3d/Makefile
+		tests/mmstests/linearelasticity/faults-2d/Makefile
 		tests/mmstests/incompressibleelasticity/Makefile
-		tests/mmstests/faults/Makefile
+		tests/mmstests/incompressibleelasticity/nofaults-2d/Makefile
 		tests/fullscale/Makefile
 		tests/fullscale/cornercases/Makefile
-		tests/fullscale/cornercases/2d/Makefile
-		tests/fullscale/cornercases/3d/Makefile
+		tests/fullscale/cornercases/nofaults-2d/Makefile
+		tests/fullscale/cornercases/nofaults-3d/Makefile
+		tests/fullscale/cornercases/faults-2d/Makefile
 		tests/fullscale/linearelasticity/Makefile
 		tests/fullscale/linearelasticity/nofaults-2d/Makefile
 		tests/fullscale/linearelasticity/nofaults-3d/Makefile
 		tests/fullscale/linearelasticity/faults-2d/Makefile
+		tests/fullscale/linearelasticity/faults-3d/Makefile
+		tests/fullscale/linearelasticity/greensfns-2d/Makefile
+		tests/fullscale/incompressibleelasticity/Makefile
+		tests/fullscale/incompressibleelasticity/nofaults-2d/Makefile
+		tests/fullscale/incompressibleelasticity/nofaults-3d/Makefile
 		tests/fullscale/viscoelasticity/Makefile
 		tests/fullscale/viscoelasticity/nofaults-2d/Makefile
 		tests/fullscale/viscoelasticity/nofaults-3d/Makefile
@@ -255,32 +267,25 @@ AC_CONFIG_FILES([Makefile
 		tests/fullscale/poroelasticity/cryer/Makefile
 		tests/fullscale/petsc/Makefile
 		tests/fullscale/eqinfo/Makefile
-    developer/Makefile
-		doc/Makefile
-		doc/install/Makefile
-		doc/releasenotes/Makefile
-		doc/userguide/Makefile
+		tests/manual/Makefile
+		tests/manual/powerlaw-2d/Makefile
+		tests/manual/powerlaw-3d/Makefile
+		developer/Makefile
+		docs/Makefile
+		release-notes/Makefile
 		examples/Makefile
-		examples/2d/Makefile
-		examples/2d/box/Makefile
-		examples/2d/strikeslip/Makefile
-		examples/2d/reverse/Makefile
-		examples/2d/subduction/Makefile
-		examples/2d/bar_waves/Makefile
-		examples/3d/Makefile
-		examples/3d/box/Makefile
-		examples/3d/subduction/Makefile
-		examples/meshing/Makefile
-		examples/meshing/surface_nurbs/Makefile
-		examples/meshing/surface_nurbs/dem/Makefile
-		examples/meshing/surface_nurbs/dem/ulines/Makefile
-		examples/meshing/surface_nurbs/dem/vlines/Makefile
-		examples/meshing/surface_nurbs/triangles/Makefile
-		examples/meshing/surface_nurbs/merge_surfs/Makefile
-		examples/meshing/surface_nurbs/subduction/Makefile
-		examples/meshing/cubit_cellsize/Makefile
-		examples/troubleshooting/Makefile
-		examples/troubleshooting/nofaults-2d/Makefile
+		examples/barwaves-2d/Makefile
+		examples/box-2d/Makefile
+		examples/box-3d/Makefile
+		examples/reverse-2d/Makefile
+		examples/strikeslip-2d/Makefile
+		examples/subduction-2d/Makefile
+		examples/subduction-3d/Makefile
+		examples/magma-2d/Makefile
+		examples/troubleshooting-2d/Makefile
+		examples/meshing-cubit/Makefile
+		examples/meshing-cubit/surface-nurbs/Makefile
+		examples/meshing-cubit/cellsize/Makefile
 		templates/Makefile
 		share/Makefile
 		])

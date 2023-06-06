@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -152,7 +152,7 @@ public:
      *
      * @param[in] t Current time.
      * @param[in] solutionVec PETSc Vec with current global view of solution.
-     * @param[in] solutionDotVec PETSc Vec with current global view of time derivative of solution.
+     * @param[in] solutionDotVec PETSc Vec with current global view of time derivative of the solution.
      */
     void setSolutionLocal(const PylithReal t,
                           PetscVec solutionVec,
@@ -282,9 +282,9 @@ private:
 
     /** Set state (auxiliary field values) of system for time t.
      *
-     * * @param[in] t Current time.
+     * @param[in] t Current time.
      */
-    void _updateStateTime(const PylithReal t);
+    void _setState(const PylithReal t);
 
     /// Notify observers with solution corresponding to initial conditions.
     void _notifyObserversInitialSoln(void);
@@ -300,13 +300,6 @@ private:
     std::vector<pylith::problems::InitialCondition*> _ic; ///< Array of initial conditions.
     pylith::problems::ProgressMonitorTime* _monitor; ///< Monitor for simulation progress.
 
-    pylith::topology::Field* _solutionDot; ///< Time derivative of solution field.
-    pylith::topology::Field* _residual; ///< Handle to residual field.
-    pylith::topology::Field* _jacobianLHSLumpedInv; ///< Handle to inverse lumped Jacobian.
-
-    PylithReal _dtJacobian; ///< Time step used to compute LHS Jacobian.
-    PylithReal _dtLHSJacobianLumped; ///< Time step used to compute LHS lumped Jacobian.
-    PylithReal _tResidual; ///< Time for current residual.
     bool _needNewLHSJacobian; ///< True if need to recompute LHS Jacobian.
     bool _haveNewLHSJacobian; ///< True if LHS Jacobian was reformed.
     bool _shouldNotifyIC;

@@ -2,22 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/materials/Elasticity.py
-#
-# @brief Python object for solving the elasticity equation.
-#
-# Factory: material
 
 from .Material import Material
 from .materials import Elasticity as ModuleElasticity
@@ -26,10 +20,24 @@ from .IsotropicLinearElasticity import IsotropicLinearElasticity
 
 
 class Elasticity(Material, ModuleElasticity):
-    """Python material property manager.
-
-    FACTORY: material
     """
+    Material behavior governed by the elasticity equation.
+
+    Implements `Material`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.problem.materials.mat_elastic]
+            label_value = 4
+            description = Upper crust elastic material
+            use_body_force = False
+            bulk_rheology = pylith.materials.IsotropicLinearElasticity
+
+            auxiliary_subfields.density.basis_order = 0
+            derived_subfields.cauchy_stress.basis_order = 1
+            derived_subfields.cauchy_strain.basis_order = 1
+        """
+    }
 
     import pythia.pyre.inventory
 
@@ -39,13 +47,10 @@ class Elasticity(Material, ModuleElasticity):
     rheology = pythia.pyre.inventory.facility("bulk_rheology", family="elasticity_rheology", factory=IsotropicLinearElasticity)
     rheology.meta['tip'] = "Bulk rheology for elastic material."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
     def __init__(self, name="elasticity"):
         """Constructor.
         """
         Material.__init__(self, name)
-        return
 
     def _defaults(self):
         from .AuxSubfieldsElasticity import AuxSubfieldsElasticity
@@ -59,18 +64,14 @@ class Elasticity(Material, ModuleElasticity):
         """
         self.rheology.preinitialize(problem)
         Material.preinitialize(self, problem)
-
         self.rheology.addAuxiliarySubfields(self, problem)
-
         ModuleElasticity.useBodyForce(self, self.useBodyForce)
-        return
 
     def _createModuleObj(self):
         """Create handle to C++ Elasticity.
         """
         ModuleElasticity.__init__(self)
         ModuleElasticity.setBulkRheology(self, self.rheology)  # Material sets auxiliary db in rheology.
-        return
 
 
 # Factories

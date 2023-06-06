@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -106,7 +106,7 @@ protected:
         _data->auxiliaryDB->addValue("body_force_y", body_force_y, body_force_units());
         _data->auxiliaryDB->addValue("gravitational_acceleration_x", gravity_field_x, gravity_field_units());
         _data->auxiliaryDB->addValue("gravitational_acceleration_y", gravity_field_y, gravity_field_units());
-        _data->auxiliaryDB->setLabel("auxiliary");
+        _data->auxiliaryDB->setDescription("auxiliary");
         _data->auxiliaryDB->setCoordSys(*_data->cs);
 
         _data->subfields["body_force"].description.numComponents = 2;
@@ -207,7 +207,7 @@ protected:
         _data->auxiliaryDB->addValue("gravitational_acceleration_x", gravity_field_x, gravity_field_units());
         _data->auxiliaryDB->addValue("gravitational_acceleration_y", gravity_field_y, gravity_field_units());
         _data->auxiliaryDB->addValue("gravitational_acceleration_z", gravity_field_z, gravity_field_units());
-        _data->auxiliaryDB->setLabel("auxiliary");
+        _data->auxiliaryDB->setDescription("auxiliary");
         _data->auxiliaryDB->setCoordSys(*_data->cs);
 
         _data->gravityField->setGravityDir(0.0, 0.0, -1.0);

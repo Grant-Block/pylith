@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -31,22 +31,22 @@ pylith::topology::ReverseCuthillMcKee::reorder(topology::Mesh* mesh) {
     PetscErrorCode err = 0;
 
     PetscDMLabel dmLabel = NULL;
-    PetscDM dmOrig = mesh->dmMesh();
-    const char* const labelName = pylith::topology::Mesh::getCellsLabelName();
-    err = DMGetLabel(dmOrig, labelName, &dmLabel);PYLITH_CHECK_ERROR(err);
+    PetscDM dmOrig = mesh->getDM();
+    const char* const labelName = pylith::topology::Mesh::cells_label_name;
+    err = DMGetLabel(dmOrig, labelName, &dmLabel);PYLITH_CHECK_ERROR(err);assert(dmLabel);
 
     PetscIS permutation = NULL;
     PetscDM dmNew = NULL;
     err = DMPlexGetOrdering(dmOrig, MATORDERINGRCM, dmLabel, &permutation);PYLITH_CHECK_ERROR(err);
     err = DMPlexPermute(dmOrig, permutation, &dmNew);PYLITH_CHECK_ERROR(err);
     err = ISDestroy(&permutation);PYLITH_CHECK_ERROR(err);
-    mesh->dmMesh(dmNew);
+    mesh->setDM(dmNew);
 
     // Verify that all material points (cells) are consecutive.
     PetscIS valuesIS = NULL;
     PetscInt numValues = 0;
     const PetscInt* values = NULL;
-    err = DMGetLabel(dmNew, labelName, &dmLabel);PYLITH_CHECK_ERROR(err);
+    err = DMGetLabel(dmNew, labelName, &dmLabel);PYLITH_CHECK_ERROR(err);assert(dmLabel);
     err = DMLabelGetValueIS(dmLabel, &valuesIS);PYLITH_CHECK_ERROR(err);
     err = ISGetLocalSize(valuesIS, &numValues);PYLITH_CHECK_ERROR(err);
     err = ISGetIndices(valuesIS, &values);PYLITH_CHECK_ERROR(err);
@@ -66,7 +66,7 @@ pylith::topology::ReverseCuthillMcKee::reorder(topology::Mesh* mesh) {
                 err = ISDestroy(&valuesIS);PYLITH_CHECK_ERROR(err);
 
                 std::ostringstream msg;
-                msg << "Cells for label material-id " << values[iValue] << " are not consecutive (" << points[iPoint] << " and " << points[iPoint-1] << ").";
+                msg << "Cells for label '" << labelName << "' with value " << values[iValue] << " are not consecutive (" << points[iPoint] << " and " << points[iPoint-1] << ").";
                 throw std::runtime_error(msg.str());
             } // if
         } // for

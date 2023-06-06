@@ -2,25 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/bc/BoundaryCondition.py
-#
-# @brief Python abstract base class for managing a boundary condition.
-#
-# This implementation of a boundary condition applies to a single
-# boundary of an domain.
-#
-# Factory: boundary_condition
 
 from pylith.problems.Physics import Physics
 from .bc import BoundaryCondition as ModuleBoundaryCondition
@@ -34,15 +25,9 @@ def validateLabel(value):
     return value
 
 
-class BoundaryCondition(Physics,
-                        ModuleBoundaryCondition):
+class BoundaryCondition(Physics, ModuleBoundaryCondition):
     """
-    Python abstract base class for managing a boundary condition.
-
-    This implementation of a boundary condition applies to a single
-    boundary of an domain.
-
-    FACTORY: boundary_condition
+    Abstract base class for boundary conditions.
     """
 
     import pythia.pyre.inventory
@@ -50,8 +35,11 @@ class BoundaryCondition(Physics,
     field = pythia.pyre.inventory.str("field", default="displacement")
     field.meta['tip'] = "Solution subfield associated with boundary condition."
 
-    label = pythia.pyre.inventory.str("label", default="", validator=validateLabel)
-    label.meta['tip'] = "Label identifier for boundary."
+    labelName = pythia.pyre.inventory.str("label", default="", validator=validateLabel)
+    labelName.meta['tip'] = "Name of label identifying boundary."
+
+    labelValue = pythia.pyre.inventory.int("label_value", default=1)
+    labelValue.meta['tip'] = "Value of label identifying boundary (tag of physical group in Gmsh files)."
 
     def __init__(self, name="boundarycondition"):
         """Constructor.
@@ -64,8 +52,9 @@ class BoundaryCondition(Physics,
         """
         Physics.preinitialize(self, problem)
 
-        ModuleBoundaryCondition.setMarkerLabel(self, self.label)
         ModuleBoundaryCondition.setSubfieldName(self, self.field)
+        ModuleBoundaryCondition.setLabelName(self, self.labelName)
+        ModuleBoundaryCondition.setLabelValue(self, self.labelValue)
         return
 
     def _configure(self):

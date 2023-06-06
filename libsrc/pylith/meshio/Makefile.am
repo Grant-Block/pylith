@@ -4,14 +4,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -31,9 +31,10 @@ subpkginclude_HEADERS = \
 	DataWriterVTK.icc \
 	MeshBuilder.hh \
 	MeshIO.hh \
-	MeshIO.icc \
 	MeshIOAscii.hh \
 	MeshIOAscii.icc \
+	MeshIOPetsc.hh \
+	MeshIOPetsc.icc \
 	MeshIOLagrit.hh \
 	MeshIOLagrit.icc \
 	OutputObserver.hh \
@@ -55,7 +56,7 @@ if ENABLE_CUBIT
 	MeshIOCubit.icc
 endif
 
-noinst_HEADERS = \
+dist_noinst_HEADERS = \
 	BinaryIO.hh \
 	GMVFile.hh \
 	GMVFileAscii.hh \

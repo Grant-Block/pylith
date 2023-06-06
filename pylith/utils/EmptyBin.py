@@ -2,37 +2,29 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/utils/EmptyBin.py
-#
-# @brief Python container for a collection of objects.
-#
-# Factory: object_bin
 
 from pylith.utils.PetscComponent import PetscComponent
 
 
 class EmptyBin(PetscComponent):
-  """Python container for a collection of objects.
   """
-
-  # PUBLIC METHODS /////////////////////////////////////////////////////
+  Empty container for a collection of objects.
+  """
 
   def __init__(self, name="emptybin"):
     """Constructor.
     """
     PetscComponent.__init__(self, name, facility="empty_bin")
-    return
 
 
 # End of file

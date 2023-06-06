@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -23,23 +23,26 @@
 // Set filename for CUBIT file.
 inline
 void
-pylith::meshio::MeshIOCubit::filename(const char* name) {
-  _filename = name;
+pylith::meshio::MeshIOCubit::setFilename(const char* name) {
+    _filename = name;
 }
+
 
 // Get filename of CUBIT file.
 inline
-const char* 
-pylith::meshio::MeshIOCubit::filename(void) const {
-  return _filename.c_str();
+const char*
+pylith::meshio::MeshIOCubit::getFilename(void) const {
+    return _filename.c_str();
 }
+
 
 // Set flag on whether to use nodeset ids or names.
 inline
 void
-pylith::meshio::MeshIOCubit::useNodesetNames(const bool flag) {
-  _useNodesetNames = flag;
+pylith::meshio::MeshIOCubit::setUseNodesetNames(const bool flag) {
+    _useNodesetNames = flag;
 }
+
 
 #endif
 

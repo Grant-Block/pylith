@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -28,13 +28,14 @@
 #include "faultsfwd.hh" // forward declarations
 
 #include "pylith/problems/Physics.hh" // ISA Physics
+#include "pylith/materials/materialsfwd.hh" // USES Material
 
 #include <string> // HASA std::string
 
 class pylith::faults::FaultCohesive : public pylith::problems::Physics {
     friend class TestFaultCohesive; // unit testing
 
-    // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC METHODS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /// Default constructor.
@@ -47,41 +48,77 @@ public:
     virtual
     void deallocate(void);
 
-    /** Set identifier for fault cohesive cells.
+    /** Set name of label identifying cohesive cells.
      *
-     * @param[in] value Fault identifier
+     * @param[in] value Name of label.
      */
-    void setInterfaceId(const int value);
+    void setCohesiveLabelName(const char* value);
 
-    /** Get identifier for fault cohesive cells.
+    /** Get name of label identifying cohesive cells.
      *
-     * @returns Fault identifier
+     * @returns Name of label.
      */
-    int getInterfaceId(void) const;
+    const char* getCohesiveLabelName(void) const;
 
-    /** Set label marking surface of interface.
+    /** Set value of label identifying cohesive cells.
      *
-     * @param[in] value Label of surface (from mesh generator).
+     * @param[in] value Value of label.
      */
-    void setSurfaceMarkerLabel(const char* value);
+    void setCohesiveLabelValue(const int value);
 
-    /** Get label marking surface of interface.
+    /** Get value of label identifying cohesive cells.
      *
-     * @returns Label of surface (from mesh generator).
+     * @returns Value of label.
      */
-    const char* getSurfaceMarkerLabel(void) const;
+    int getCohesiveLabelValue(void) const;
 
-    /** Set label marking buried edges of interface surface.
+    /** Set name of label marking surface of interface.
      *
-     * @param[in] value Label of buried surface edge (from mesh generator).
+     * @param[in] value Name of label of surface (from mesh generator).
      */
-    void setBuriedEdgesMarkerLabel(const char* value);
+    void setSurfaceLabelName(const char* value);
 
-    /** Get label marking buried edges of interface surface.
+    /** Get name of label marking surface of interface.
      *
-     * @returns Label of buried surface edge (from mesh generator).
+     * @returns Name of label of surface (from mesh generator).
      */
-    const char* getBuriedEdgesMarkerLabel(void) const;
+    const char* getSurfaceLabelName(void) const;
+
+    /** Set value of label marking surface of interface.
+     *
+     * @param[in] value Value of label of surface (from mesh generator).
+     */
+    void setSurfaceLabelValue(const int value);
+
+    /** Get value of label marking surface of interface.
+     *
+     * @returns Value of label of surface (from mesh generator).
+     */
+    int getSurfaceLabelValue(void) const;
+
+    /** Set name of label marking buried edges of interface surface.
+     *
+     * @param[in] value Name of label of buried surface edge (from mesh generator).
+     */
+    void setBuriedEdgesLabelName(const char* value);
+
+    /** Get name of label marking buried edges of interface surface.
+     *
+     * @returns Name of label of buried surface edge (from mesh generator).
+     */
+    const char* getBuriedEdgesLabelName(void) const;
+
+    /** Set value of label marking buried edges of interface surface.
+     *
+     * @param[in] value Value of label of buried surface edge (from mesh generator).
+     */
+    void setBuriedEdgesLabelValue(const int value);
+
+    /** Get value of label marking buried edges of interface surface.
+     *
+     * @returns Value of label of buried surface edge (from mesh generator).
+     */
+    int getBuriedEdgesLabelValue(void) const;
 
     /** Set first choice for reference direction to discriminate among tangential directions in 3-D.
      *
@@ -101,24 +138,117 @@ public:
      */
     void adjustTopology(pylith::topology::Mesh* const mesh);
 
-    // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
+    /** Create integrator and set kernels.
+     *
+     * @param[in] solution Solution field.
+     * @param[in] materials Materials in problem.
+     * @returns Integrator if applicable, otherwise NULL.
+     */
+    virtual
+    pylith::feassemble::Integrator* createIntegrator(const pylith::topology::Field& solution,
+                                                     const std::vector<pylith::materials::Material*>& materials) = 0;
+
+    /** Create constraint and set kernels.
+     *
+     * @param[in] solution Solution field.
+     * @returns Constraint if applicable, otherwise NULL.
+     */
+    std::vector<pylith::feassemble::Constraint*> createConstraints(const pylith::topology::Field& solution);
+
+    /** Create derived field.
+     *
+     * @param[in] solution Solution field.
+     * @param[in\ domainMesh Finite-element mesh associated with integration domain.
+     *
+     * @returns Derived field if applicable, otherwise NULL.
+     */
+    pylith::topology::Field* createDerivedField(const pylith::topology::Field& solution,
+                                                const pylith::topology::Mesh& domainMesh);
+
+    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
+protected:
+
+    /** Create single integratin patch for entire fault.
+     *
+     * @param[inout] integrator Integrator for fault interface.
+     */
+    void _createIntegrationPatch(pylith::feassemble::IntegratorInterface* integrator);
+
+    /** Create integration patches associated with cohesive cells that have the same pairs of materials on the
+     * two sides of the fault.
+     *
+     * @param[inout] integrator Integrator for fault interface.
+     * @param[in] dmSoln PETSc DM associated with solution.
+     */
+    void _createIntegrationPatches(pylith::feassemble::IntegratorInterface* integrator,
+                                   const PetscDM dmSoln);
+
+    /** Update kernel constants.
+     *
+     * @param[in] dt Current time step.
+     */
+    void _updateKernelConstants(const PylithReal dt);
+
+    /** Set kernels for residual.
+     *
+     * @param[out] integrator Integrator for material.
+     * @param[in] solution Solution field.
+     * @param[in] materials Materials in problem.
+     */
+    virtual
+    void _setKernelsResidual(pylith::feassemble::IntegratorInterface* integrator,
+                             const pylith::topology::Field& solution,
+                             const std::vector<pylith::materials::Material*>& materials) const = 0;
+
+    /** Set kernels for Jacobian.
+     *
+     * @param[out] integrator Integrator for material.
+     * @param[in] solution Solution field.
+     * @param[in] materials Materials in problem.
+     */
+    virtual
+    void _setKernelsJacobian(pylith::feassemble::IntegratorInterface* integrator,
+                             const pylith::topology::Field& solution,
+                             const std::vector<pylith::materials::Material*>& materials) const = 0;
+
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
 protected:
 
     PylithReal _refDir1[3]; ///< First choice reference direction used to compute boundary tangential directions.
     PylithReal _refDir2[3]; ///< Second choice reference direction used to compute boundary tangential directions.
 
-    // PRIVATE MEMBERS /////////////////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE METHODS ////////////////////////////////////////////////////////////////////////////
 private:
 
-    int _interfaceId; ///< Identifier for cohesive cells.
-    std::string _interfaceLabel; ///< Label identifying vertices associated with fault.
-    std::string _buriedEdgesLabel; ///< Label identifying vertices along buried edges of fault.
+    inline
+    static
+    PetscErrorCode _zero(PetscInt dim,
+                         PetscReal t,
+                         const PetscReal x[],
+                         PetscInt Nc,
+                         PetscScalar *u,
+                         void *ctx) {
+        for (int c = 0; c < Nc; ++c) {
+            u[c] = 0.0;
+        } // for
+        return 0;
+    } // _zero
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE MEMBERS ////////////////////////////////////////////////////////////////////////////
+private:
+
+    std::string _surfaceLabelName; ///< Name of label identifying points associated with fault.
+    std::string _buriedEdgesLabelName; ///< Name of label identifying buried edges of fault.
+    int _surfaceLabelValue; ///< Value of label identifying points associated with fault.
+    int _buriedEdgesLabelValue; ///< Value of label identifying buried edges of fault.
+
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     FaultCohesive(const FaultCohesive&); ///< Not implemented
     const FaultCohesive& operator=(const FaultCohesive&); ///< Not implemented
+
+    pylith::feassemble::Integrator* createIntegrator(const pylith::topology::Field& solution); // Empty method
 
 }; // class FaultCohesive
 

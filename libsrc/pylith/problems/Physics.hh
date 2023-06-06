@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, Rice University
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2019 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -38,7 +38,7 @@
 class pylith::problems::Physics : public pylith::utils::PyreComponent {
     friend class TestPhysics; // unit testing
 
-    // PUBLIC ENUM /////////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC ENUM ////////////////////////////////////////////////////////////////////////////////
 public:
 
     enum FormulationEnum {
@@ -47,7 +47,7 @@ public:
         DYNAMIC_IMEX, // With inertia; implicit+explicit time stepping).
     }; // FormulationEnum
 
-    // PUBLIC MEMBERS //////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC MEMBERS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /// Constructor
@@ -59,6 +59,30 @@ public:
     /// Deallocate PETSc and local data structures.
     virtual
     void deallocate(void);
+
+    /** Set name of label marking material.
+     *
+     * @param[in] value Name of label for material (from mesh generator).
+     */
+    void setLabelName(const char* value);
+
+    /** Get name of label marking material.
+     *
+     * @returns Name of label for material (from mesh generator).
+     */
+    const char* getLabelName(void) const;
+
+    /** Set value of label marking material.
+     *
+     * @param[in] value Value of label for material (from mesh generator).
+     */
+    void setLabelValue(const int value);
+
+    /** Get value of label marking material.
+     *
+     * @returns Value of label for material (from mesh generator).
+     */
+    int getLabelValue(void) const;
 
     /** Set manager of scales used to nondimensionalize problem.
      *
@@ -91,16 +115,16 @@ public:
      * @param[in] quadOrder Order of quadrature rule.
      * @param[in] dimension Dimension of points for discretization.
      * @param[in] cellBasis Type of basis functions to use (e.g., simplex, tensor, or default).
-     * @param[in] isBasisContinuous True if basis is continuous.
      * @param[in] feSpace Finite-element space.
+     * @param[in] isBasisContinuous True if basis is continuous.
      */
     void setAuxiliarySubfieldDiscretization(const char* subfieldName,
                                             const int basisOrder,
                                             const int quadOrder,
                                             const int dimension,
                                             const pylith::topology::FieldBase::CellBasis cellBasis,
-                                            const bool isBasisContinuous,
-                                            const pylith::topology::FieldBase::SpaceEnum feSpace);
+                                            const pylith::topology::FieldBase::SpaceEnum feSpace,
+                                            const bool isBasisContinuous);
 
     /** Set discretization information for derived subfield.
      *
@@ -109,16 +133,16 @@ public:
      * @param[in] quadOrder Order of quadrature rule.
      * @param[in] dimension Dimension of points for discretization.
      * @param[in] cellBasis Type of basis functions to use (e.g., simplex, tensor, or default).
-     * @param[in] isBasisContinuous True if basis is continuous.
      * @param[in] feSpace Finite-element space.
+     * @param[in] isBasisContinuous True if basis is continuous.
      */
     void setDerivedSubfieldDiscretization(const char* subfieldName,
                                           const int basisOrder,
                                           const int quadOrder,
                                           const int dimension,
                                           const pylith::topology::FieldBase::CellBasis cellBasis,
-                                          const bool isBasisContinuous,
-                                          const pylith::topology::FieldBase::SpaceEnum feSpace);
+                                          const pylith::topology::FieldBase::SpaceEnum feSpace,
+                                          const bool isBasisContinuous);
 
     /** Register observer to receive notifications.
      *
@@ -167,15 +191,15 @@ public:
     /** Create constraint and set kernels.
      *
      * @param[in] solution Solution field.
-     * @returns Constraint if applicable, otherwise NULL.
+     * @returns Constraints if applicable, otherwise NULL.
      */
     virtual
-    pylith::feassemble::Constraint* createConstraint(const pylith::topology::Field& solution) = 0;
+    std::vector<pylith::feassemble::Constraint*> createConstraints(const pylith::topology::Field& solution) = 0;
 
     /** Create auxiliary field.
      *
      * @param[in] solution Solution field.
-     * @param[in\ physicsMesh Finite-element mesh associated with physics.
+     * @param[in] physicsMesh Finite-element mesh associated with physics.
      *
      * @returns Auxiliary field if applicable, otherwise NULL.
      */
@@ -186,7 +210,7 @@ public:
     /** Create derived field.
      *
      * @param[in] solution Solution field.
-     * @param[in\ physicsMesh Finite-element mesh associated with physics.
+     * @param[in] physicsMesh Finite-element mesh associated with physics.
      *
      * @returns Derived field if applicable, otherwise NULL.
      */
@@ -203,7 +227,7 @@ public:
     void updateAuxiliaryField(pylith::topology::Field* auxiliaryField,
                               const double t);
 
-    // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////////////
+    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
 protected:
 
     /** Get auxiliary factory associated with physics.
@@ -227,19 +251,21 @@ protected:
     virtual
     void _updateKernelConstants(const PylithReal dt);
 
-    // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
 protected:
 
     spatialdata::units::Nondimensional* _normalizer; ///< Nondimensionalizer.
     FormulationEnum _formulation; ///< Formulation for equations.
     pylith::real_array _kernelConstants; ///< Constants used in finite-element kernels (point-wise functions).
 
-    // PRIVATE MEMBERS //////////////////////////////////////////////////////
+    // PRIVATE MEMBERS ////////////////////////////////////////////////////////////////////////////
 private:
 
+    std::string _labelName; ///< Name of label in mesh for material.
+    int _labelValue; ///< Value of label in mesh for material.
     pylith::problems::ObserversPhysics* _observers; ///< Subscribers of updates.
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     Physics(const Physics&); ///< Not implemented.

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -24,6 +24,7 @@
 
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
 
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL*
 
 #include <cassert>
@@ -65,9 +66,10 @@ pylith::topology::FieldFactory::setSubfieldDiscretization(const char* subfieldNa
                                                           const int basisOrder,
                                                           const int quadOrder,
                                                           const int dimension,
+                                                          const bool isFaultOnly,
                                                           const pylith::topology::FieldBase::CellBasis cellBasis,
-                                                          const bool isBasisContinuous,
-                                                          const pylith::topology::FieldBase::SpaceEnum feSpace) {
+                                                          const pylith::topology::FieldBase::SpaceEnum feSpace,
+                                                          const bool isBasisContinuous) {
     PYLITH_METHOD_BEGIN;
     PYLITH_JOURNAL_DEBUG("setSubfieldDiscretization(subfieldName="<<subfieldName<<", basisOrder="<<basisOrder<<", quadOrder="<<quadOrder<<", dimension="<<dimension<<", cellBasis="<<cellBasis<<", isBasisContinuous="<<isBasisContinuous<<")");
     assert(dimension != 0);
@@ -77,8 +79,9 @@ pylith::topology::FieldFactory::setSubfieldDiscretization(const char* subfieldNa
     feInfo.quadOrder = quadOrder;
     feInfo.dimension = dimension;
     feInfo.cellBasis = cellBasis;
-    feInfo.isBasisContinuous = isBasisContinuous;
+    feInfo.isFaultOnly = isFaultOnly;
     feInfo.feSpace = feSpace;
+    feInfo.isBasisContinuous = isBasisContinuous;
     _subfieldDiscretizations[subfieldName] = feInfo;
 
     PYLITH_METHOD_END;

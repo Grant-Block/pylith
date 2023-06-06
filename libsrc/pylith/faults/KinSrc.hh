@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -41,17 +41,23 @@
 // KinSrc -------------------------------------------------------------
 /** @brief Kinematic earthquake source.
  *
- * KinSrc is responsible for providing the value of slip at time t
- * over a fault surface.
+ * KinSrc is responsible for providing the value of slip, slip rate, or
+ * slip acceleration at time t over a fault surface.
  *
- * The fault integrator's auxiliary field has the 'slip' subfield. The
- * auxiliary subfields in this object use the discretization from the
- * 'slip' subfield.
+ * The auxiliary subfields in this object use the discretization from the
+ * fault 'slip' auxiliary subfield.
  */
 class pylith::faults::KinSrc : public pylith::utils::PyreComponent {
     friend class TestKinSrc; // unit testing
 
-    // PUBLIC METHODS /////////////////////////////////////////////////////
+    // PUBLIC MEMBERS /////////////////////////////////////////////////////////////////////////////
+public:
+
+    static const int GET_SLIP;
+    static const int GET_SLIP_RATE;
+    static const int GET_SLIP_ACC;
+
+    // PUBLIC METHODS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /// Default constructor.
@@ -68,13 +74,13 @@ public:
      *
      * @param value Origin time for earthquake source.
      */
-    void originTime(const PylithReal value);
+    void setOriginTime(const PylithReal value);
 
     /** Get origin time for earthquake source.
      *
      * @returns Origin time for earthquake source.
      */
-    PylithReal originTime(void) const;
+    PylithReal getOriginTime(void) const;
 
     /** Get auxiliary field associated with the kinematic source.
      *
@@ -98,33 +104,22 @@ public:
                     const spatialdata::units::Nondimensional& normalizer,
                     const spatialdata::geocoords::CoordSys* cs);
 
-    /** Set slip values at time t.
+    /** Get requested slip subfields at time t.
      *
-     * @param[inout] slipLocalVec Local PETSc vector for slip values.
+     * @param[inout] slipLocalVec Local PETSc vector for slip, slip rate, or slip accelerationvalues.
      * @param[in] faultAuxiliaryField Auxiliary field for fault.
      * @param[in] t Time t.
      * @param[in] timeScale Time scale for nondimensionalization.
+     * @param[in] bitSlipSubfields Slip subfields to compute.
      */
     virtual
-    void updateSlip(PetscVec slipLocalVec,
-                    pylith::topology::Field* faultAuxiliaryField,
-                    const PylithScalar t,
-                    const PylithScalar timeScale);
+    void getSlipSubfields(PetscVec slipLocalVec,
+                          pylith::topology::Field* faultAuxiliaryField,
+                          const PylithScalar t,
+                          const PylithScalar timeScale,
+                          const int bitSlipSubfields);
 
-    /** Set slip rate values at time t.
-     *
-     * @param[inout] slipRateLocalVec Local PETSc vector for slip values.
-     * @param[in] faultAuxiliaryField Auxiliary field for fault.
-     * @param[in] t Time t.
-     * @param[in] timeScale Time scale for nondimensionalization.
-     */
-    virtual
-    void updateSlipRate(PetscVec slipRateLocalVec,
-                        pylith::topology::Field* faultAuxiliaryField,
-                        const PylithScalar t,
-                        const PylithScalar timeScale);
-
-    // PROTECTED METHODS //////////////////////////////////////////////////
+    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
 protected:
 
     /** Setup auxiliary subfields (discretization and query fns).
@@ -150,20 +145,21 @@ protected:
      */
     void _setFEConstants(const pylith::topology::Field& auxField) const;
 
-    // PROTECTED MEMBERS //////////////////////////////////////////////////
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
 protected:
 
     pylith::faults::KinSrcAuxiliaryFactory* _auxiliaryFactory; ///< Factory for auxiliary subfields.
     PetscPointFunc _slipFnKernel; ///< Kernel for slip time function.
     PetscPointFunc _slipRateFnKernel; ///< Kernel for slip rate time function.
+    PetscPointFunc _slipAccFnKernel; ///< Kernel for slip acceleration time function.
     pylith::topology::Field* _auxiliaryField; ///< Auxiliary field for this integrator.
 
-    // PRIVATE MEMBERS ////////////////////////////////////////////////////
+    // PRIVATE MEMBERS ////////////////////////////////////////////////////////////////////////////
 private:
 
     PylithReal _originTime; ///< Origin time for earthquake source
 
-    // NOT IMPLEMENTED ////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     KinSrc(const KinSrc&); ///< Not implemented

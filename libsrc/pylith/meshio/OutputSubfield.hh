@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -72,6 +72,14 @@ public:
     /// Deallocate PETSc and local data structures.
     void deallocate(void);
 
+    /** Set label name and value.
+     *
+     * @param[in] name Name of PETSc label associated with subfield.
+     * @param[in] value Value of PETSc label associated with subfield.
+     */
+    void setLabel(const char* name,
+                  const int value);
+
     /** Get description of subfield.
      *
      * @returns Description of subfield.
@@ -102,6 +110,12 @@ public:
      */
     void project(const PetscVec& fieldVector);
 
+    /** Project PETSc vector to subfield using label.
+     *
+     * @param[in] fieldVector PETSc vector with subfields.
+     */
+    void projectWithLabel(const PetscVec& fieldVector);
+
     /** Extract subfield from field.
      *
      * @pre DM must match for field and subfield.
@@ -127,6 +141,9 @@ protected:
     PetscVec _vector; ///< PETSc global vector for subfield.
     PetscPointFunc _fn; ///< PETSc point function for projection.
     PetscInt _subfieldIndex; ///< Index of subfield in fields.
+
+    PetscDMLabel _label; ///< PETSc label associated with subfield.
+    PetscInt _labelValue; ///< Value of PETSc label associated with subfield.
 
     // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:

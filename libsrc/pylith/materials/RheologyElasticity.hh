@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -38,7 +38,7 @@
 class pylith::materials::RheologyElasticity : public pylith::utils::PyreComponent {
     friend class TestIsotropicLinearElasticity; // unit testing
 
-    // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC METHODS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /// Default constructor.
@@ -68,7 +68,7 @@ public:
      * @return RHS residual kernel for stress.
      */
     virtual
-    PetscPointFunc getKernelResidualStress(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+    PetscPointFunc getKernelf1v(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
 
     /** Get elastic constants kernel for RHS Jacobian G(t,s).
      *
@@ -77,7 +77,25 @@ public:
      * @return RHS Jacobian kernel for elastic constants.
      */
     virtual
-    PetscPointJac getKernelJacobianElasticConstants(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+    PetscPointJac getKernelJf3vu(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+
+    /** Get f0 kernel for LHS interface residual, F(t,s,dot{s}), for negative fault face.
+     *
+     * @param[in] coordsys Coordinate system.
+     *
+     * @return LHS residual f0 kernel.
+     */
+    virtual
+    PetscBdPointFunc getKernelf0Neg(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+
+    /** Get f0 kernel for LHS interface residual, F(t,s,dot{s}), for positive fault face.
+     *
+     * @param[in] coordsys Coordinate system.
+     *
+     * @return LHS residual f0 kernel.
+     */
+    virtual
+    PetscBdPointFunc getKernelf0Pos(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
 
     /** Get triggers for needing to compute the elastic constants for the RHS Jacobian.
      *
@@ -92,7 +110,7 @@ public:
      * @return Project kernel for computing stress subfield in derived field.
      */
     virtual
-    PetscPointFunc getKernelDerivedCauchyStress(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+    PetscPointFunc getKernelCauchyStressVector(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
 
     /** Add kernels for updating state variables.
      *
@@ -112,11 +130,11 @@ public:
     void updateKernelConstants(pylith::real_array* kernelConstants,
                                const PylithReal dt) const;
 
-    // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
 
     int _lhsJacobianTriggers; ///< Triggers for needing to recompute the RHS Jacobian.
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     RheologyElasticity(const RheologyElasticity&); ///< Not implemented.

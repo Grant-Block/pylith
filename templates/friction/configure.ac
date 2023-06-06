@@ -4,14 +4,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2021 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -48,7 +48,7 @@ CIT_CHECK_PYTHON_SHARED
 # SWIG
 CIT_NUMPY_PYTHON_MODULE
 CIT_NUMPY_INCDIR
-AC_PROG_SWIG([2.0.4],[3.0.2])
+AC_PROG_SWIG([4.0.0])
 
 # MPI
 AC_LANG(C++)

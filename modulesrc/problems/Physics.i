@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -23,7 +23,7 @@
 
 namespace pylith {
     namespace problems {
-        class Physics : public pylith::utils::PyreComponent {
+        class Physics: public pylith::utils::PyreComponent {
             // PUBLIC ENUM
             // /////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
@@ -46,6 +46,30 @@ public:
             /// Deallocate PETSc and local data structures.
             virtual
             void deallocate(void);
+
+            /** Set name of label marking material.
+             *
+             * @param[in] value Name of label for material (from mesh generator).
+             */
+            void setLabelName(const char* value);
+
+            /** Get name of label marking material.
+             *
+             * @returns Name of label for material (from mesh generator).
+             */
+            const char* getLabelName(void) const;
+
+            /** Set value of label marking material.
+             *
+             * @param[in] value Value of label for material (from mesh generator).
+             */
+            void setLabelValue(const int value);
+
+            /** Get value of label marking material.
+             *
+             * @returns Value of label for material (from mesh generator).
+             */
+            int getLabelValue(void) const;
 
             /** Set manager of scales used to nondimensionalize problem.
              *
@@ -78,16 +102,16 @@ public:
              * @param[in] quadOrder Order of quadrature rule.
              * @param[in] dimension Dimension of points for discretization.
              * @param[in] cellBasis Type of basis functions to use (e.g., simplex, tensor, or default).
-             * @param[in] isBasisContinuous True if basis is continuous.
              * @param[in] feSpace Finite-element space.
+             * @param[in] isBasisContinuous True if basis is continuous.
              */
             void setAuxiliarySubfieldDiscretization(const char* subfieldName,
                                                     const int basisOrder,
                                                     const int quadOrder,
                                                     const int dimension,
                                                     const pylith::topology::FieldBase::CellBasis cellBasis,
-                                                    const bool isBasisContinuous,
-                                                    const pylith::topology::FieldBase::SpaceEnum feSpace);
+                                                    const pylith::topology::FieldBase::SpaceEnum feSpace,
+                                                    const bool isBasisContinuous);
 
             /** Set discretization information for derived subfield.
              *
@@ -96,16 +120,16 @@ public:
              * @param[in] quadOrder Order of quadrature rule.
              * @param[in] dimension Dimension of points for discretization.
              * @param[in] cellBasis Type of basis functions to use (e.g., simplex, tensor, or default).
-             * @param[in] isBasisContinuous True if basis is continuous.
              * @param[in] feSpace Finite-element space.
+             * @param[in] isBasisContinuous True if basis is continuous.
              */
             void setDerivedSubfieldDiscretization(const char* subfieldName,
                                                   const int basisOrder,
                                                   const int quadOrder,
                                                   const int dimension,
                                                   const pylith::topology::FieldBase::CellBasis cellBasis,
-                                                  const bool isBasisContinuous,
-                                                  const pylith::topology::FieldBase::SpaceEnum feSpace);
+                                                  const pylith::topology::FieldBase::SpaceEnum feSpace,
+                                                  const bool isBasisContinuous);
 
             /** Register observer to receive notifications.
              *
@@ -157,7 +181,7 @@ public:
              * @returns Constraint if applicable, otherwise NULL.
              */
             virtual
-            pylith::feassemble::Constraint* createConstraint(const pylith::topology::Field& solution) = 0;
+            std::vector < pylith::feassemble::Constraint* > createConstraints(const pylith::topology::Field& solution) = 0;
 
             /** Create auxiliary field.
              *

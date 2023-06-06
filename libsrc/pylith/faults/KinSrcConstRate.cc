@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -29,19 +29,19 @@
 
 #include <cassert> // USES assert()
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::faults::KinSrcConstRate::KinSrcConstRate(void) {
     pylith::utils::PyreComponent::setName("kinsrcconstrate");
 } // constructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::faults::KinSrcConstRate::~KinSrcConstRate(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Slip time function kernel.
 void
 pylith::faults::KinSrcConstRate::slipFn(const PylithInt dim,
@@ -82,12 +82,16 @@ pylith::faults::KinSrcConstRate::slipFn(const PylithInt dim,
         for (PylithInt i = 0; i < dim; ++i) {
             slip[i] = slipRate[i] * (t - t0);
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slip[i] = 0.0;
+        } // for
+    } // if/else
 
 } // slipFn
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Slip rate time function kernel.
 void
 pylith::faults::KinSrcConstRate::slipRateFn(const PylithInt dim,
@@ -128,12 +132,49 @@ pylith::faults::KinSrcConstRate::slipRateFn(const PylithInt dim,
         for (PylithInt i = 0; i < dim; ++i) {
             slipRate[i] = slipRateAux[i];
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipRate[i] = 0.0;
+        } // for
+    } // if/else
 
 } // slipRateFn
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Slip acceleration time function kernel.
+void
+pylith::faults::KinSrcConstRate::slipAccFn(const PylithInt dim,
+                                           const PylithInt numS,
+                                           const PylithInt numA,
+                                           const PylithInt sOff[],
+                                           const PylithInt sOff_x[],
+                                           const PylithScalar s[],
+                                           const PylithScalar s_t[],
+                                           const PylithScalar s_x[],
+                                           const PylithInt aOff[],
+                                           const PylithInt aOff_x[],
+                                           const PylithScalar a[],
+                                           const PylithScalar a_t[],
+                                           const PylithScalar a_x[],
+                                           const PylithReal t,
+                                           const PylithScalar x[],
+                                           const PylithInt numConstants,
+                                           const PylithScalar constants[],
+                                           PylithScalar slipAcc[]) {
+    const PylithInt _numA = 2;
+
+    assert(_numA == numA);
+    assert(slipAcc);
+
+    for (PylithInt i = 0; i < dim; ++i) {
+        slipAcc[i] = 0.0;
+    } // for
+
+} // slipRateFn
+
+
+// ------------------------------------------------------------------------------------------------
 // Preinitialize earthquake source. Set names/sizes of auxiliary subfields.
 void
 pylith::faults::KinSrcConstRate::_auxiliaryFieldSetup(const spatialdata::units::Nondimensional& normalizer,
@@ -153,6 +194,7 @@ pylith::faults::KinSrcConstRate::_auxiliaryFieldSetup(const spatialdata::units::
 
     _slipFnKernel = pylith::faults::KinSrcConstRate::slipFn;
     _slipRateFnKernel = pylith::faults::KinSrcConstRate::slipRateFn;
+    _slipAccFnKernel = pylith::faults::KinSrcConstRate::slipAccFn;
 
     PYLITH_METHOD_END;
 } // _auxiliaryFieldSetup

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -24,6 +24,7 @@
 #include "ExodusII.hh" // USES ExodusII
 
 #include "pylith/utils/array.hh" // USES scalar_array, int_array, string_vector
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_COMPONENT_*
 
 #include "petsc.h" // USES MPI_Comm
@@ -70,7 +71,7 @@ pylith::meshio::MeshIOCubit::_read(void) {
 
     assert(_mesh);
 
-    const int commRank = _mesh->commRank();
+    const int commRank = _mesh->getCommRank();
     int meshDim = 0;
     int spaceDim = 0;
     int numVertices = 0;
@@ -88,7 +89,7 @@ pylith::meshio::MeshIOCubit::_read(void) {
             const int meshDim = exofile.getDim("num_dim");
 
             _readVertices(exofile, &coordinates, &numVertices, &spaceDim);
-            err = MPI_Bcast(&spaceDim, 1, MPI_INT, 0, _mesh->comm());PYLITH_CHECK_ERROR(err);
+            err = MPI_Bcast(&spaceDim, 1, MPI_INT, 0, _mesh->getComm());PYLITH_CHECK_ERROR(err);
             _readCells(exofile, &cells, &materialIds, &numCells, &numCorners);
             _orientCells(&cells, numCells, numCorners, meshDim);
             MeshBuilder::buildMesh(_mesh, &coordinates, numVertices, spaceDim, cells, numCells, numCorners, meshDim);
@@ -106,7 +107,7 @@ pylith::meshio::MeshIOCubit::_read(void) {
             throw std::runtime_error(msg.str());
         } // try/catch
     } else {
-        err = MPI_Bcast(&spaceDim, 1, MPI_INT, 0, _mesh->comm());PYLITH_CHECK_ERROR(err);
+        err = MPI_Bcast(&spaceDim, 1, MPI_INT, 0, _mesh->getComm());PYLITH_CHECK_ERROR(err);
         MeshBuilder::buildMesh(_mesh, &coordinates, numVertices, spaceDim, cells, numCells, numCorners, meshDim);
         _setMaterials(materialIds);
     }
@@ -153,7 +154,7 @@ pylith::meshio::MeshIOCubit::_readVertices(ExodusII& exofile,
     // Number of vertices
     *numVertices = exofile.getDim("num_nodes");
 
-    PYLITH_COMPONENT_INFO("Reading " << *numVertices << " vertices.");
+    PYLITH_COMPONENT_INFO_ROOT("Reading " << *numVertices << " vertices.");
 
     if (exofile.hasVar("coord", NULL)) {
         const int ndims = 2;
@@ -213,7 +214,7 @@ pylith::meshio::MeshIOCubit::_readCells(ExodusII& exofile,
     *numCells = exofile.getDim("num_elem");
     const int numMaterials = exofile.getDim("num_el_blk");
 
-    PYLITH_COMPONENT_INFO("Reading " << *numCells << " cells in " << numMaterials << " blocks.");
+    PYLITH_COMPONENT_INFO_ROOT("Reading " << *numCells << " cells in " << numMaterials << " blocks.");
 
     int_array blockIds(numMaterials);
     int ndims = 1;
@@ -275,7 +276,7 @@ pylith::meshio::MeshIOCubit::_readGroups(ExodusII& exofile) {
 
     const int numGroups = exofile.getDim("num_node_sets");
 
-    PYLITH_COMPONENT_INFO("Found " << numGroups << " node sets.");
+    PYLITH_COMPONENT_INFO_ROOT("Found " << numGroups << " node sets.");
 
     int_array ids(numGroups);
     int ndims = 1;
@@ -301,7 +302,7 @@ pylith::meshio::MeshIOCubit::_readGroups(ExodusII& exofile) {
         ndims = 1;
         dims[0] = nodesetSize;
 
-        PYLITH_COMPONENT_INFO("Reading node set '" << groupNames[iGroup] << "' with id " << ids[iGroup] << " containing " << nodesetSize << " nodes.");
+        PYLITH_COMPONENT_INFO_ROOT("Reading node set '" << groupNames[iGroup] << "' with id " << ids[iGroup] << " containing " << nodesetSize << " nodes.");
         exofile.getVar(&points[0], dims, ndims, varname.str().c_str());
 
         std::sort(&points[0], &points[0]+nodesetSize);

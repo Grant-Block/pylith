@@ -2,35 +2,24 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/faults/KinSrc.py
-#
-# @brief Python abstract base class for managing parameters for a kinematic
-# earthquake sources.
-#
-# KinSrc is responsible for providing the value of slip at time t
-# over a fault surface.
-#
-# Factory: eq_kinematic_src
 
 from pylith.utils.PetscComponent import PetscComponent
 from .faults import KinSrc as ModuleKinSrc
 
 
 class KinSrc(PetscComponent, ModuleKinSrc):
-    """Python object for managing parameters for a kinematic earthquake sources.
-
-    Factory: eq_kinematic_src
+    """
+    Abstract base class for a prescribed slip source.
     """
 
     import pythia.pyre.inventory
@@ -41,9 +30,8 @@ class KinSrc(PetscComponent, ModuleKinSrc):
 
     from pythia.pyre.units.time import second
     originTime = pythia.pyre.inventory.dimensional("origin_time", default=0.0 * second)
-    originTime.meta['tip'] = "Origin time for earthquake rupture."
+    originTime.meta['tip'] = "Origin time for slip source."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
 
     def __init__(self, name="kinsrc"):
         """Constructor.
@@ -51,14 +39,16 @@ class KinSrc(PetscComponent, ModuleKinSrc):
         PetscComponent.__init__(self, name, facility="eq_kinematic_src")
         return
 
-    def preinitialize(self):
+    def preinitialize(self, problem):
         """Do pre-initialization setup.
         """
         self._createModuleObj()
 
         ModuleKinSrc.setIdentifier(self, self.aliases[-1])
         ModuleKinSrc.auxFieldDB(self, self.auxFieldDB)
-        ModuleKinSrc.originTime(self, self.originTime.value)
+
+        originTimeN = self.originTime / problem.normalizer.getTimeScale()
+        ModuleKinSrc.setOriginTime(self, originTimeN)
         return
 
     def verifyConfiguration(self):

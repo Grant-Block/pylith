@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -72,6 +72,9 @@ typedef struct _p_PetscDS* PetscDS;
 
 /// forward declaration for PETSc FE
 typedef struct _p_PetscFE* PetscFE;
+
+/// forward declaration for PETSc weak form
+typedef struct _p_PetscWeakForm* PetscWeakForm;
 
 #endif // pylith_utils_petscfwd_h
 

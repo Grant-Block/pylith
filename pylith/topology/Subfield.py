@@ -2,31 +2,23 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2015 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/topology/Subfield.py
-#
-# @brief Python object for defining attributes of a subfield within a
-# field.
-#
-# Factory: subfield.
 
 from pythia.pyre.components.Component import Component
 
 
 class Subfield(Component):
-    """Python object for defining discretization of a subfield.
-
-    FACTORY: subfield
+    """
+    Python object for defining discretization of a subfield.
     """
 
     import pythia.pyre.inventory

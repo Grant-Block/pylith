@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -62,29 +62,45 @@ public:
              */
             void addAuxiliarySubfields(void);
 
-            /** Get stress kernel for RHS residual, G(t,s).
+            /** Get stress kernel for LHS residual, F(t,s,\dot{s}).
              *
              * @param[in] coordsys Coordinate system.
              *
-             * @return RHS residual kernel for stress.
+             * @return LHS residual kernel for stress.
              */
-            PetscPointFunc getKernelResidualStress(const spatialdata::geocoords::CoordSys* coordsys) const;
+            PetscPointFunc getKernelf1v(const spatialdata::geocoords::CoordSys* coordsys) const;
 
-            /** Get elastic constants kernel for RHS Jacobian G(t,s).
+            /** Get elastic constants kernel for LHS Jacobian F(t,s,\dot{s}).
              *
              * @param[in] coordsys Coordinate system.
              *
-             * @return RHS Jacobian kernel for elastic constants.
+             * @return LHS Jacobian kernel for elastic constants.
              */
-            PetscPointJac getKernelJacobianElasticConstants(const spatialdata::geocoords::CoordSys* coordsys) const;
+            PetscPointJac getKernelJf3vu(const spatialdata::geocoords::CoordSys* coordsys) const;
 
-            /** Get stress kernel for derived field.
+            /** Get f0 kernel for LHS interface residual, F(t,s,dot{s}), for negative fault face.
+             *
+             * @param[in] coordsys Coordinate system.
+             *
+             * @return LHS residual f0 kernel.
+             */
+            PetscBdPointFunc getKernelf0Neg(const spatialdata::geocoords::CoordSys* coordsys) const;
+
+            /** Get f0 kernel for LHS interface residual, F(t,s,dot{s}), for positive fault face.
+             *
+             * @param[in] coordsys Coordinate system.
+             *
+             * @return LHS residual f0 kernel.
+             */
+            PetscBdPointFunc getKernelf0Pos(const spatialdata::geocoords::CoordSys* coordsys) const;
+
+            /** Get Cauchy stress kernel for derived field.
              *
              * @param[in] coordsys Coordinate system.
              *
              * @return Project kernel for computing stress subfield in derived field.
              */
-            PetscPointFunc getKernelDerivedCauchyStress(const spatialdata::geocoords::CoordSys* coordsys) const;
+            PetscPointFunc getKernelCauchyStressVector(const spatialdata::geocoords::CoordSys* coordsys) const;
 
             /** Add kernels for updating state variables.
              *
@@ -102,9 +118,7 @@ public:
             void updateKernelConstants(pylith::real_array* kernelConstants,
                                        const PylithReal dt) const;
 
-        };
-
-        // class IsotropicLinearMaxwell
+        }; // class IsotropicLinearMaxwell
 
     } // materials
 } // pylith

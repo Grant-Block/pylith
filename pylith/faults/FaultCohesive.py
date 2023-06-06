@@ -2,23 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/faults/FaultCohesive.py
-#
-# @brief Python abstract base class for a fault surface implemented
-# with cohesive elements.
-#
-# Factory: fault
 
 from pylith.problems.Physics import Physics
 from .faults import FaultCohesive as ModuleFaultCohesive
@@ -49,30 +42,28 @@ def validateDir(value):
 
 
 class FaultCohesive(Physics, ModuleFaultCohesive):
-    """Python abstract base class for a fault surface implemeted with
-    cohesive elements.
-
-    FACTORY: fault
+    """
+    Abstract base class for a fault surface implemeted with cohesive cells.
     """
 
     import pythia.pyre.inventory
 
-    matId = pythia.pyre.inventory.int("id", default=100)
-    matId.meta['tip'] = "Fault identifier (must be unique across all faults and materials)."
+    labelName = pythia.pyre.inventory.str("label", default="", validator=validateLabel)
+    labelName.meta['tip'] = "Name of label identifier for fault."
 
-    label = pythia.pyre.inventory.str(
-        "label", default="", validator=validateLabel)
-    label.meta['tip'] = "Label identifier for fault."
+    labelValue = pythia.pyre.inventory.int("label_value", default=1)
+    labelValue.meta['tip'] = "Value of label identifier for fault."
 
-    edge = pythia.pyre.inventory.str("edge", default="")
-    edge.meta['tip'] = "Label identifier for buried fault edges."
+    edgeName = pythia.pyre.inventory.str("edge", default="")
+    edgeName.meta['tip'] = "Name of label identifier for buried fault edges."
 
-    refDir1 = pythia.pyre.inventory.list(
-        "ref_dir_1", default=[0.0, 0.0, 1.0], validator=validateDir)
+    edgeValue = pythia.pyre.inventory.int("edge_value", default=1)
+    edgeValue.meta['tip'] = "Value of label identifier for buried fault edges."
+
+    refDir1 = pythia.pyre.inventory.list("ref_dir_1", default=[0.0, 0.0, 1.0], validator=validateDir)
     refDir1.meta['tip'] = "First choice for reference direction to discriminate among tangential directions in 3-D."
 
-    refDir2 = pythia.pyre.inventory.list(
-        "ref_dir_2", default=[0.0, 1.0, 0.0], validator=validateDir)
+    refDir2 = pythia.pyre.inventory.list("ref_dir_2", default=[0.0, 1.0, 0.0], validator=validateDir)
     refDir2.meta['tip'] = "Second choice for reference direction to discriminate among tangential directions in 3-D."
 
     def __init__(self, name="fault"):
@@ -86,9 +77,10 @@ class FaultCohesive(Physics, ModuleFaultCohesive):
         """
         Physics.preinitialize(self, problem)
 
-        ModuleFaultCohesive.setInterfaceId(self, self.matId)
-        ModuleFaultCohesive.setSurfaceMarkerLabel(self, self.label)
-        ModuleFaultCohesive.setBuriedEdgesMarkerLabel(self, self.edge)
+        ModuleFaultCohesive.setSurfaceLabelName(self, self.labelName)
+        ModuleFaultCohesive.setSurfaceLabelValue(self, self.labelValue)
+        ModuleFaultCohesive.setBuriedEdgesLabelName(self, self.edgeName)
+        ModuleFaultCohesive.setBuriedEdgesLabelValue(self, self.edgeValue)
         ModuleFaultCohesive.setRefDir1(self, self.refDir1)
         ModuleFaultCohesive.setRefDir2(self, self.refDir2)
         return

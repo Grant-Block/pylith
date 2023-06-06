@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -37,6 +37,7 @@
 #include "pylith/materials/materialsfwd.hh" // HOLDSA Material
 #include "pylith/bc/bcfwd.hh" // HOLDSA BoundaryCondition
 #include "pylith/faults/faultsfwd.hh" // HOLDSA FaultCohesive
+#include "pylith/testing/testingfwd.hh" // MMSTest ISA friend
 #include "spatialdata/spatialdb/spatialdbfwd.hh" // HASA GravityField
 
 #include "pylith/topology/topologyfwd.hh" // USES Mesh, Field
@@ -50,6 +51,7 @@
 
 class pylith::problems::Problem : public pylith::utils::PyreComponent {
     friend class TestProblem; // unit testing
+    friend class pylith::testing::MMSTest; // MMS testing
 
     // PUBLIC ENUM /////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
@@ -95,6 +97,12 @@ public:
      */
     SolverTypeEnum getSolverType(void) const;
 
+    /** Specify which default PETSc options to use.
+     *
+     * @param[in] flags Flags indicating which default PETSc options to set.
+     */
+    void setPetscDefaults(const int flags);
+
     /** Set manager of scales used to nondimensionalize problem.
      *
      * @param[in] dim Nondimensionalizer.
@@ -126,6 +134,18 @@ public:
      * @param[in] field Solution field.
      */
     void setSolution(pylith::topology::Field* field);
+
+    /** Get solution field.
+     *
+     * @returns Solution field.
+     */
+    const pylith::topology::Field* getSolution(void) const;
+
+    /** Get time derivative solution field.
+     *
+     * @returns Time derivative of solution field.
+     */
+    const pylith::topology::Field* getSolutionDot(void) const;
 
     /** Set materials.
      *
@@ -169,7 +189,7 @@ public:
     // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
 protected:
 
-    pylith::topology::Field* _solution; ///< Solution field.
+    pylith::feassemble::IntegrationData* _integrationData; /// > Data needed to integrate PDE.
 
     spatialdata::units::Nondimensional* _normalizer; ///< Nondimensionalization of scales.
     spatialdata::spatialdb::GravityField* _gravityField; ///< Gravity field.
@@ -184,12 +204,13 @@ protected:
 
     pylith::problems::Physics::FormulationEnum _formulation; ///< Formulation for equations.
     SolverTypeEnum _solverType; ///< Problem (solver) type.
+    int _petscDefaults; ///< Flags for PETSc default options for problem.
 
     // PRIVATE METHODS /////////////////////////////////////////////////////////////////////////////////////////////////
 private:
 
-    /// Check material and interface ids.
-    void _checkMaterialIds(void) const;
+    /// Check material and interface label values.
+    void _checkMaterialLabels(void) const;
 
     /// Create array of integrators from materials, interfaces, and boundary conditions.
     void _createIntegrators(void);
@@ -199,9 +220,6 @@ private:
 
     /// Setup solution subfields and discretization.
     void _setupSolution(void);
-
-    // Setup field so Lagrange multiplier subfield is limited to degrees of freedom associated with the cohesive cells.
-    void _setupLagrangeMultiplier(void);
 
     // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
 private:

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -23,10 +23,11 @@
 #include "pylith/topology/ReverseCuthillMcKee.hh" // USES ReverseCuthillMcKee
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
+#include "pylith/topology/MeshOps.hh" // USES MeshOps
 #include "pylith/topology/Stratum.hh" // USES Stratum
 #include "pylith/topology/Field.hh" // USES Field
 #include "pylith/meshio/MeshIOAscii.hh" // USES MeshIOAscii
-#include "pylith/testing/FaultCohesiveStub.hh" // USES FaultCohesiveStub
+#include "tests/src/FaultCohesiveStub.hh" // USES FaultCohesiveStub
 #include "pylith/topology/Stratum.hh" // USES Stratum
 #include "pylith/topology/CoordsVisitor.hh" // USES CoordsVisitor
 
@@ -66,14 +67,14 @@ pylith::topology::TestReverseCuthillMcKee::testReorder(void) {
     CPPUNIT_ASSERT(_mesh);
 
     // Get original DM and create Mesh for it
-    const PetscDM dmOrig = _mesh->dmMesh();
+    const PetscDM dmOrig = _mesh->getDM();
     PetscObjectReference((PetscObject) dmOrig);
     Mesh meshOrig;
-    meshOrig.dmMesh(dmOrig);
+    meshOrig.setDM(dmOrig);
 
     ReverseCuthillMcKee::reorder(_mesh);
 
-    const PetscDM& dmMesh = _mesh->dmMesh();CPPUNIT_ASSERT(dmMesh);
+    const PetscDM& dmMesh = _mesh->getDM();CPPUNIT_ASSERT(dmMesh);
 
     // Check vertices (size only)
     topology::Stratum verticesStratumE(dmOrig, topology::Stratum::DEPTH, 0);
@@ -166,15 +167,13 @@ pylith::topology::TestReverseCuthillMcKee::testReorder(void) {
     Field::Discretization discretization;
     discretization.basisOrder = 1;
     discretization.quadOrder = 1;
-    discretization.isBasisContinuous = true;
-    discretization.feSpace = FieldBase::POLYNOMIAL_SPACE;
     fieldOrig.subfieldAdd(description, discretization);
     fieldOrig.subfieldsSetup();
     fieldOrig.createDiscretization();
     fieldOrig.allocate();
     PetscMat matrix = NULL;
     PetscInt bandwidthOrig = 0;
-    err = DMCreateMatrix(fieldOrig.dmMesh(), &matrix);CPPUNIT_ASSERT(!err);
+    err = DMCreateMatrix(fieldOrig.getDM(), &matrix);CPPUNIT_ASSERT(!err);
     err = MatComputeBandwidth(matrix, 0.0, &bandwidthOrig);CPPUNIT_ASSERT(!err);
     err = MatDestroy(&matrix);CPPUNIT_ASSERT(!err);
 
@@ -184,7 +183,7 @@ pylith::topology::TestReverseCuthillMcKee::testReorder(void) {
     field.createDiscretization();
     field.allocate();
     PetscInt bandwidth = 0;
-    err = DMCreateMatrix(field.dmMesh(), &matrix);CPPUNIT_ASSERT(!err);
+    err = DMCreateMatrix(field.getDM(), &matrix);CPPUNIT_ASSERT(!err);
     err = MatComputeBandwidth(matrix, 0.0, &bandwidth);CPPUNIT_ASSERT(!err);
     err = MatDestroy(&matrix);CPPUNIT_ASSERT(!err);
 
@@ -205,16 +204,16 @@ pylith::topology::TestReverseCuthillMcKee::_initialize() {
     delete _mesh;_mesh = new Mesh;CPPUNIT_ASSERT(_mesh);
 
     meshio::MeshIOAscii iohandler;
-    iohandler.filename(_data->filename);
+    iohandler.setFilename(_data->filename);
     iohandler.read(_mesh);
-    CPPUNIT_ASSERT(_mesh->numCells() > 0);
-    CPPUNIT_ASSERT(_mesh->numVertices() > 0);
+    CPPUNIT_ASSERT(pylith::topology::MeshOps::getNumCells(*_mesh) > 0);
+    CPPUNIT_ASSERT(pylith::topology::MeshOps::getNumVertices(*_mesh) > 0);
 
     // Adjust topology if necessary.
     if (_data->faultLabel) {
         pylith::faults::FaultCohesiveStub fault;
-        fault.setInterfaceId(100);
-        fault.setSurfaceMarkerLabel(_data->faultLabel);
+        fault.setCohesiveLabelValue(100);
+        fault.setSurfaceLabelName(_data->faultLabel);
         fault.adjustTopology(_mesh);
     } // if
 
@@ -226,12 +225,12 @@ pylith::topology::TestReverseCuthillMcKee::_initialize() {
 // Constructor
 pylith::topology::TestReverseCuthillMcKee_Data::TestReverseCuthillMcKee_Data(void) :
     filename(NULL),
-    faultLabel(NULL) {} // constructor
+    faultLabel(NULL) {}
 
 
 // ----------------------------------------------------------------------
 // Destructor
-pylith::topology::TestReverseCuthillMcKee_Data::~TestReverseCuthillMcKee_Data(void) {} // destructor
+pylith::topology::TestReverseCuthillMcKee_Data::~TestReverseCuthillMcKee_Data(void) {}
 
 
 // End of file

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, Rice University
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2018 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -40,19 +40,23 @@ public:
     /// Kernels (point-wise functions) for residual.
     struct ResidualKernels {
         std::string subfield; ///< Name of subfield
+        EquationPart part; ///< Residual part (LHS or RHS).
         PetscBdPointFunc r0; ///< f0 (RHS) or g0 (LHS) function.
         PetscBdPointFunc r1; ///< f1 (RHS) or g1 (LHS) function.
 
         ResidualKernels(void) :
             subfield(""),
+            part(pylith::feassemble::Integrator::LHS),
             r0(NULL),
             r1(NULL) {}
 
 
         ResidualKernels(const char* subfieldValue,
+                        const EquationPart partValue,
                         PetscBdPointFunc r0Value,
                         PetscBdPointFunc r1Value) :
             subfield(subfieldValue),
+            part(partValue),
             r0(r0Value),
             r1(r1Value) {}
 
@@ -72,17 +76,17 @@ public:
     virtual
     void deallocate(void);
 
-    /** Set label marking boundary associated with boundary condition surface.
+    /** Set name of solution subfield associated with boundary condition.
      *
-     * @param[in] value Label of surface (from mesh generator).
+     * @param[in] value Name of solution subfield.
      */
-    void setMarkerLabel(const char* value);
+    void setSubfieldName(const char* value);
 
-    /** Get label marking boundary associated with boundary condition surface.
+    /** Get name of solution subfield associated with boundary condition.
      *
-     * @returns Label of surface (from mesh generator).
+     * @preturn Name of solution subfield.
      */
-    const char* getMarkerLabel(void) const;
+    const char* getSubfieldName(void) const;
 
     /** Get mesh associated with integrator domain.
      *
@@ -92,15 +96,11 @@ public:
 
     /** Set kernels for RHS residual.
      *
-     * @param kernels Array of kernerls for computing the RHS residual.
+     * @param[in] kernels Array of kernerls for computing the RHS residual.
+     * @param[in] solution Solution field.
      */
-    void setKernelsRHSResidual(const std::vector<ResidualKernels>& kernels);
-
-    /** Set kernels for LHS residual.
-     *
-     * @param kernels Array of kernerls for computing the LHS residual.
-     */
-    void setKernelsLHSResidual(const std::vector<ResidualKernels>& kernels);
+    void setKernelsResidual(const std::vector<ResidualKernels>& kernels,
+                            const pylith::topology::Field& solution);
 
     /** Initialize integration domain, auxiliary field, and derived field. Update observers.
      *
@@ -108,78 +108,52 @@ public:
      */
     void initialize(const pylith::topology::Field& solution);
 
-    /** Update auxiliary field to current time.
+    /** Set auxiliary field for current time.
      *
      * @param[in] t Current time.
      */
-    void updateState(const PylithReal t);
+    void setState(const PylithReal t);
 
     /** Compute RHS residual for G(t,s).
      *
      * @param[out] residual Field for residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeRHSResidual(pylith::topology::Field* residual,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const pylith::topology::Field& solution);
+                            const pylith::feassemble::IntegrationData& integrationData);
 
     /** Compute LHS residual for F(t,s,\dot{s}).
      *
      * @param[out] residual Field for residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeLHSResidual(pylith::topology::Field* residual,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const pylith::topology::Field& solution,
-                            const pylith::topology::Field& solutionDot);
+                            const pylith::feassemble::IntegrationData& integrationData);
 
     /** Compute LHS Jacobian and preconditioner for F(t,s,\dot{s}) with implicit time-stepping.
      *
      * @param[out] jacobianMat PETSc Mat with Jacobian sparse matrix.
      * @param[out] precondMat PETSc Mat with Jacobian preconditioning sparse matrix.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeLHSJacobian(PetscMat jacobianMat,
                             PetscMat precondMat,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const PylithReal s_tshift,
-                            const pylith::topology::Field& solution,
-                            const pylith::topology::Field& solutionDot);
+                            const pylith::feassemble::IntegrationData& integrationData);
 
     /** Compute inverse of lumped LHS Jacobian for F(t,s,\dot{s}) with explicit time-stepping.
      *
      * @param[out] jacobianInv Inverse of lumped Jacobian as a field.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeLHSJacobianLumpedInv(pylith::topology::Field* jacobianInv,
-                                     const PylithReal t,
-                                     const PylithReal dt,
-                                     const PylithReal s_tshift,
-                                     const pylith::topology::Field& solution);
+                                     const pylith::feassemble::IntegrationData& integrationData);
 
     // PRIVATE MEMBERS /////////////////////////////////////////////////////////////////////////////////////////////////
 private:
 
-    std::vector<ResidualKernels> _kernelsRHSResidual; ///< kernels for RHS residual.
-    std::vector<ResidualKernels> _kernelsLHSResidual; ///< kernels for LHS residual.
-
     pylith::topology::Mesh* _boundaryMesh; ///< Boundary mesh.
     std::string _boundarySurfaceLabel; ///< Name of label identifying boundary surface.
+    std::string _subfieldName; ///< Name of solution subfield for boundary condition.
 
     // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
 private:

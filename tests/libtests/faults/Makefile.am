@@ -4,21 +4,19 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
 
-subpackage = faults
-include $(top_srcdir)/subpackage.am
-include $(top_srcdir)/check.am
+include $(top_srcdir)/tests/check_cppunit.am
 
 SUBDIRS = data
 
@@ -33,28 +31,14 @@ test_faults_SOURCES = \
 	TestAdjustTopology_quad.cc \
 	TestAdjustTopology_tet.cc \
 	TestAdjustTopology_hex.cc \
-	test_driver.cc
+	TestFaultCohesive.cc \
+	$(top_srcdir)/tests/src/FaultCohesiveStub.cc \
+	$(top_srcdir)/tests/src/StubMethodTracker.cc \
+	$(top_srcdir)/tests/src/driver_cppunit.cc
 
 
-noinst_HEADERS = \
+dist_noinst_HEADERS = \
 	TestAdjustTopology.hh
-
-AM_CPPFLAGS += \
-	$(PYTHON_EGG_CPPFLAGS) -I$(PYTHON_INCDIR) \
-	$(PETSC_SIEVE_FLAGS) $(PETSC_CC_INCLUDES)
-
-test_faults_LDFLAGS = \
-	$(AM_LDFLAGS) $(PYTHON_LA_LDFLAGS)
-
-test_faults_LDADD = \
-	-lcppunit -ldl \
-	$(top_builddir)/libsrc/pylith/libpylith.la \
-	-lspatialdata \
-	$(PETSC_LIB) $(PYTHON_BLDLIBRARY) $(PYTHON_LIBS) $(PYTHON_SYSLIBS)
-
-if ENABLE_CUBIT
-  test_faults_LDADD += -lnetcdf
-endif
 
 
 # End of file

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -53,7 +53,7 @@ pylith::topology::TestMeshOps::testNondimensionalize(void) {
 
     Mesh mesh;
     meshio::MeshIOAscii iohandler;
-    iohandler.filename("data/tri3.mesh");
+    iohandler.setFilename("data/tri3.mesh");
     iohandler.read(&mesh);
 
     spatialdata::geocoords::CSCart cs;
@@ -64,7 +64,7 @@ pylith::topology::TestMeshOps::testNondimensionalize(void) {
     MeshOps::nondimensionalize(&mesh, normalizer);
 
     // Get vertices
-    PetscDM dmMesh = mesh.dmMesh();CPPUNIT_ASSERT(dmMesh);
+    PetscDM dmMesh = mesh.getDM();CPPUNIT_ASSERT(dmMesh);
     Stratum depthStratum(dmMesh, Stratum::DEPTH, 0);
     const PetscInt vStart = depthStratum.begin();
     const PetscInt vEnd = depthStratum.end();
@@ -109,7 +109,7 @@ pylith::topology::TestMeshOps::testCheckTopology(void) {
         const char* filename = filenames[i];
         Mesh mesh;
         meshio::MeshIOAscii iohandler;
-        iohandler.filename(filename);
+        iohandler.setFilename(filename);
         iohandler.read(&mesh);
         MeshOps::checkTopology(mesh);
     } // for
@@ -143,7 +143,7 @@ pylith::topology::TestMeshOps::testIsSimplexMesh(void) {
         const bool isSimplex = results[i];
         Mesh mesh;
         meshio::MeshIOAscii iohandler;
-        iohandler.filename(filename);
+        iohandler.setFilename(filename);
         iohandler.read(&mesh);
         CPPUNIT_ASSERT_EQUAL(isSimplex, MeshOps::isSimplexMesh(mesh));
     } // for
@@ -160,17 +160,17 @@ pylith::topology::TestMeshOps::testCheckMaterialIds(void) {
 
     Mesh mesh;
     meshio::MeshIOAscii iohandler;
-    iohandler.filename("data/tri3.mesh");
+    iohandler.setFilename("data/tri3.mesh");
     iohandler.read(&mesh);
 
-    pylith::int_array materialIds(2);
-    materialIds[0] = 4;
-    materialIds[1] = 3;
+    pylith::int_array materialValues(2);
+    materialValues[0] = 4;
+    materialValues[1] = 3;
 
-    MeshOps::checkMaterialIds(mesh, materialIds);
+    MeshOps::checkMaterialLabels(mesh, materialValues);
 
-    materialIds[0] = 99;
-    CPPUNIT_ASSERT_THROW(MeshOps::checkMaterialIds(mesh, materialIds), std::runtime_error);
+    materialValues[0] = 99;
+    CPPUNIT_ASSERT_THROW(MeshOps::checkMaterialLabels(mesh, materialValues), std::runtime_error);
 
     PYLITH_METHOD_END;
 } // testCheckMaterialIds

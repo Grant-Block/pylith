@@ -2,30 +2,23 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2015 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/problems/Solution.py
-#
-# @brief Python solution field for problem.
-#
-# Factory: solution.
 
 from pylith.utils.PetscComponent import PetscComponent
 
 
 class Solution(PetscComponent):
-    """Python abstract base class for solution field for problem.
-
-    FACTORY: solution.
+    """
+    Abstract base class for solution field for problem.
     """
 
     import pythia.pyre.inventory
@@ -36,21 +29,18 @@ class Solution(PetscComponent):
                                                     itemFactory=subfieldFactory, factory=SolnDisp)
     subfields.meta['tip'] = "Subfields in solution."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
     def __init__(self, name="solution"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="solution")
         self.field = None
-        return
 
     def preinitialize(self, problem, mesh):
         """Do minimal initialization of solution.
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        isRoot = mpi_is_root()
+        if isRoot:
             self._info.log("Performing minimal initialization of solution.")
 
         from pylith.topology.Field import Field
@@ -59,7 +49,7 @@ class Solution(PetscComponent):
         spaceDim = mesh.getCoordSys().getSpaceDim()
         for subfield in self.subfields.components():
             subfield.initialize(problem.normalizer, spaceDim)
-            if 0 == comm.rank:
+            if isRoot:
                 self._debug.log("Adding subfield '%s' as '%s' with components %s to solution." %
                                 (subfield.fieldName, subfield.userAlias, subfield.componentNames))
             descriptor = subfield.getTraitDescriptor("quadrature_order")
@@ -67,23 +57,19 @@ class Solution(PetscComponent):
                 quadOrder = problem.defaults.quadOrder
             else:
                 quadOrder = subfield.quadOrder
-            self.field.subfieldAdd(subfield.fieldName, subfield.userAlias, subfield.vectorFieldType, subfield.componentNames,
-                                   subfield.scale.value, subfield.basisOrder, quadOrder, subfield.dimension,
-                                   subfield.cellBasis, subfield.isBasisContinuous, subfield.feSpace)
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
+            self.field.subfieldAdd(subfield.fieldName, subfield.userAlias, subfield.vectorFieldType, 
+                                   subfield.componentNames, subfield.scale.value, subfield.basisOrder, 
+                                   quadOrder, subfield.dimension, subfield.isFaultOnly,
+                                   subfield.cellBasis, subfield.feSpace, subfield.isBasisContinuous)
 
     def _configure(self):
         """Set members based using inventory.
         """
         PetscComponent._configure(self)
-        return
 
     def _cleanup(self):
         if self.field:
             self.field.deallocate()
-        return
 
 # FACTORIES ////////////////////////////////////////////////////////////
 

@@ -2,45 +2,36 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pythia.pyre/meshio/DataWriter.py
-#
-# @brief Python abstract base class for writing finite-element data.
-#
-# Factory: output_data_writer
-
-from pylith.utils.PetscComponent import PetscComponent
 
 import os
 
+from pylith.utils.PetscComponent import PetscComponent
+
 
 class DataWriter(PetscComponent):
-    """Python abstract base class for writing finite-element data.
     """
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    Abstract base class writing solution, auxiliary, and derived subfields.
+    """
 
     def __init__(self, name="datawriter"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="datawriter")
-        return
 
     def preinitialize(self):
         """Setup data writer.
         """
         self._createModuleObj()
-        return
 
     @staticmethod
     def mkfilename(outputDir, simName, label, suffix):
@@ -52,23 +43,18 @@ class DataWriter(PetscComponent):
     def mkpath(self, filename):
         """Create path for output file.
         """
-        self._info.log("Creating path for output file '{}'".format(filename))
+        from pylith.mpi.Communicator import mpi_is_root
+        isRoot = mpi_is_root()
+        if isRoot:
+            self._info.log("Creating path for output file '{}'".format(filename))
         relpath = os.path.dirname(filename)
 
-        if relpath and not os.path.exists(relpath):
-            # Only create directory on proc 0
-            from pylith.mpi.Communicator import mpi_comm_world
-            comm = mpi_comm_world()
-            if not comm.rank:
-                os.makedirs(relpath)
-        return
+        if relpath and not os.path.exists(relpath) and isRoot:
+            os.makedirs(relpath)
 
     def verifyConfiguration(self):
         """Verify compatibility of configuration.
         """
-        return
-
-    # PRIVATE METHODS /////////////////////////////////////////////////////
 
     def _createModuleObj(self):
         """Create handle to C++ object."""

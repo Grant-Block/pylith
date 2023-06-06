@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -36,32 +36,35 @@
 #include <strings.h> // USES strcasecmp()
 #include <stdexcept> // USES std::logic_error
 
-static PetscErrorCode DMPlexInvertCell_Private(PetscInt dim, PetscInt numCorners, PetscInt cone[])
-{
+static PetscErrorCode
+DMPlexInvertCell_Private(PetscInt dim,
+                         PetscInt numCorners,
+                         PetscInt cone[]) {
 #define SWAPCONE(cone,i,j)  \
-  do {                      \
-    int _cone_tmp;          \
-    _cone_tmp = (cone)[i];  \
-    (cone)[i] = (cone)[j];  \
-    (cone)[j] = _cone_tmp;  \
-  } while (0)
+    do {                      \
+        int _cone_tmp;          \
+        _cone_tmp = (cone)[i];  \
+        (cone)[i] = (cone)[j];  \
+        (cone)[j] = _cone_tmp;  \
+    } while (0)
 
-  PetscFunctionBegin;
-  if (dim != 3) PetscFunctionReturn(0);
-  switch (numCorners) {
-  case 4: SWAPCONE(cone,0,1); break;
-  case 6: SWAPCONE(cone,0,1); break;
-  case 8: SWAPCONE(cone,1,3); break;
-  default: break;
-  }
-  PetscFunctionReturn(0);
+    PetscFunctionBegin;
+    if (dim != 3) { PetscFunctionReturn(0);}
+    switch (numCorners) {
+    case 4: SWAPCONE(cone,0,1);break;
+    case 6: SWAPCONE(cone,0,1);break;
+    case 8: SWAPCONE(cone,1,3);break;
+    default: break;
+    }
+    PetscFunctionReturn(0);
 #undef SWAPCONE
 }
+
 
 // ----------------------------------------------------------------------
 // Setup testing data.
 void
-pylith::meshio::TestMeshIO::setUp(void) { // setUp
+pylith::meshio::TestMeshIO::setUp(void) {
     PYLITH_METHOD_BEGIN;
 
     _mesh = NULL;
@@ -73,7 +76,7 @@ pylith::meshio::TestMeshIO::setUp(void) { // setUp
 // ----------------------------------------------------------------------
 // Tear down testing data.
 void
-pylith::meshio::TestMeshIO::tearDown(void) { // tearDown
+pylith::meshio::TestMeshIO::tearDown(void) {
     PYLITH_METHOD_BEGIN;
 
     delete _mesh;_mesh = NULL;
@@ -85,7 +88,7 @@ pylith::meshio::TestMeshIO::tearDown(void) { // tearDown
 // ----------------------------------------------------------------------
 // Get simple mesh for testing I/O.
 void
-pylith::meshio::TestMeshIO::_createMesh(void) { // _createMesh
+pylith::meshio::TestMeshIO::_createMesh(void) {
     PYLITH_METHOD_BEGIN;
 
     const TestMeshIO_Data* data = _getData();CPPUNIT_ASSERT(data);
@@ -119,15 +122,15 @@ pylith::meshio::TestMeshIO::_createMesh(void) { // _createMesh
     for (PylithInt coff = 0; coff < bound; coff += data->numCorners) {
         err = DMPlexInvertCell_Private(data->cellDim, data->numCorners, &cells[coff]);PYLITH_CHECK_ERROR(err);
     } // for
-    err = DMPlexCreateFromCellListPetsc(_mesh->comm(), data->cellDim, data->numCells, data->numVertices, data->numCorners, interpolateMesh, cells, data->spaceDim, data->vertices, &dmMesh);PYLITH_CHECK_ERROR(err);
+    err = DMPlexCreateFromCellListPetsc(_mesh->getComm(), data->cellDim, data->numCells, data->numVertices, data->numCorners, interpolateMesh, cells, data->spaceDim, data->vertices, &dmMesh);PYLITH_CHECK_ERROR(err);
     delete [] cells;
-    _mesh->dmMesh(dmMesh);
+    _mesh->setDM(dmMesh);
 
     // Material ids
     PylithInt cStart, cEnd;
     err = DMPlexGetHeightStratum(dmMesh, 0, &cStart, &cEnd);PYLITH_CHECK_ERROR(err);
     for (PylithInt c = cStart; c < cEnd; ++c) {
-        err = DMSetLabelValue(dmMesh, "material-id", c, data->materialIds[c-cStart]);PYLITH_CHECK_ERROR(err);
+        err = DMSetLabelValue(dmMesh, pylith::topology::Mesh::cells_label_name, c, data->materialIds[c-cStart]);PYLITH_CHECK_ERROR(err);
     } // for
 
     // Groups
@@ -163,9 +166,9 @@ pylith::meshio::TestMeshIO::_createMesh(void) { // _createMesh
 
 
 // ----------------------------------------------------------------------
-// Check values in mesh against data->
+// Check values in mesh against data.
 void
-pylith::meshio::TestMeshIO::_checkVals(void) { // _checkVals
+pylith::meshio::TestMeshIO::_checkVals(void) {
     PYLITH_METHOD_BEGIN;
 
     CPPUNIT_ASSERT(_mesh);
@@ -173,10 +176,10 @@ pylith::meshio::TestMeshIO::_checkVals(void) { // _checkVals
     const TestMeshIO_Data* data = _getData();CPPUNIT_ASSERT(data);
 
     // Check mesh dimension
-    CPPUNIT_ASSERT_EQUAL(data->cellDim, _mesh->dimension());
+    CPPUNIT_ASSERT_EQUAL(data->cellDim, _mesh->getDimension());
     const int spaceDim = data->spaceDim;
 
-    PetscDM dmMesh = _mesh->dmMesh();CPPUNIT_ASSERT(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();CPPUNIT_ASSERT(dmMesh);
 
     // Check vertices
     topology::Stratum verticesStratum(dmMesh, topology::Stratum::DEPTH, 0);
@@ -193,11 +196,8 @@ pylith::meshio::TestMeshIO::_checkVals(void) { // _checkVals
         CPPUNIT_ASSERT_EQUAL(spaceDim, coordsVisitor.sectionDof(v));
 
         for (int iDim = 0; iDim < spaceDim; ++iDim, ++index) {
-            if (data->vertices[index] < 1.0) {
-                CPPUNIT_ASSERT_DOUBLES_EQUAL(data->vertices[index], coordsArray[off+iDim], tolerance);
-            } else {
-                CPPUNIT_ASSERT_DOUBLES_EQUAL(1.0, coordsArray[off+iDim]/data->vertices[index], tolerance);
-            } // if/else
+            const double vtolerance = std::max(tolerance, fabs(data->vertices[index])*tolerance);
+            CPPUNIT_ASSERT_DOUBLES_EQUAL(data->vertices[index], coordsArray[off+iDim], vtolerance);
         } // for
     } // for
 
@@ -232,7 +232,7 @@ pylith::meshio::TestMeshIO::_checkVals(void) { // _checkVals
     // check materials
     PylithInt matId = 0;
     for (PylithInt c = cStart; c < cEnd; ++c) {
-        err = DMGetLabelValue(dmMesh, "material-id", c, &matId);PYLITH_CHECK_ERROR(err);
+        err = DMGetLabelValue(dmMesh, pylith::topology::Mesh::cells_label_name, c, &matId);PYLITH_CHECK_ERROR(err);
         CPPUNIT_ASSERT_EQUAL(data->materialIds[c-cStart], matId);
     } // for
 
@@ -268,13 +268,15 @@ pylith::meshio::TestMeshIO::_checkVals(void) { // _checkVals
             } // if
         } // for
         std::string groupType = (firstPoint >= cStart && firstPoint < cEnd) ? "cell" : "vertex";
+        const PylithInt labelValue = data->groupTags ? data->groupTags[iGroup] : 1;
         CPPUNIT_ASSERT_EQUAL(std::string(data->groupTypes[iGroup]), groupType);
         PylithInt numPoints, numVertices = 0;
-        err = DMGetStratumSize(dmMesh, groupName, 1, &numPoints);PYLITH_CHECK_ERROR(err);
+        err = DMGetStratumSize(dmMesh, groupName, labelValue, &numPoints);PYLITH_CHECK_ERROR(err);
+        CPPUNIT_ASSERT(numPoints > 0);
         PetscIS pointIS = NULL;
         const PylithInt *points = NULL;
         const PylithInt offset = ("vertex" == groupType) ? numCells : 0;
-        err = DMGetStratumIS(dmMesh, groupName, 1, &pointIS);PYLITH_CHECK_ERROR(err);
+        err = DMGetStratumIS(dmMesh, groupName, labelValue, &pointIS);PYLITH_CHECK_ERROR(err);
         err = ISGetIndices(pointIS, &points);PYLITH_CHECK_ERROR(err);
         for (PylithInt p = 0; p < numPoints; ++p) {
             const PylithInt pStart = ("vertex" == groupType) ? vStart : cStart;
@@ -294,24 +296,6 @@ pylith::meshio::TestMeshIO::_checkVals(void) { // _checkVals
 
 
 // ----------------------------------------------------------------------
-// Test debug()
-void
-pylith::meshio::TestMeshIO::_testDebug(MeshIO& iohandler) { // _testDebug
-    PYLITH_METHOD_BEGIN;
-
-    bool debug = false;
-    iohandler.debug(debug);
-    CPPUNIT_ASSERT_EQUAL(debug, iohandler.debug());
-
-    debug = true;
-    iohandler.debug(debug);
-    CPPUNIT_ASSERT_EQUAL(debug, iohandler.debug());
-
-    PYLITH_METHOD_END;
-} // _testDebug
-
-
-// ----------------------------------------------------------------------
 // Constructor
 pylith::meshio::TestMeshIO_Data::TestMeshIO_Data(void) :
     numVertices(0),
@@ -324,17 +308,16 @@ pylith::meshio::TestMeshIO_Data::TestMeshIO_Data(void) :
     materialIds(NULL),
     groups(NULL),
     groupSizes(NULL),
+    groupTags(NULL),
     groupNames(NULL),
     groupTypes(NULL),
     numGroups(0),
-    useIndexZero(true) { // constructor
-} // constructor
+    useIndexZero(true) {}
 
 
 // ----------------------------------------------------------------------
 // Destructor
-pylith::meshio::TestMeshIO_Data::~TestMeshIO_Data(void) { // destructor
-} // destructor
+pylith::meshio::TestMeshIO_Data::~TestMeshIO_Data(void) {}
 
 
 // End of file

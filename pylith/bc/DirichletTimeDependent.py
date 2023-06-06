@@ -2,23 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/bc/DirichletTimeDependent.py
-#
-# @brief Python object for managing a time-dependent Dirichlet (prescribed
-# values) boundary condition.
-#
-# Factory: boundary_condition
 
 from .BoundaryCondition import BoundaryCondition
 from .bc import DirichletTimeDependent as ModuleDirichletTimeDependent
@@ -26,18 +19,44 @@ from pylith.utils.NullComponent import NullComponent
 
 
 class DirichletTimeDependent(BoundaryCondition, ModuleDirichletTimeDependent):
-    """Python object for managing a time-dependent Dirichlet (prescribed values)
-    boundary condition.
-
-    Factory: boundary_condition
     """
+    Dirichlet (prescribed values) time-dependent boundary condition.
+
+    This boundary condition sets values of a single solution subfield on a boundary.
+    To set multiple solution subfields on a boundary, use multiple Dirichlet boundary conditions.
+
+    :::{seealso}
+    See [`AuxSubfieldsTimeDependent` Component](AuxSubfieldsTimeDependent.md) for the functional form of the time depenence.
+    :::
+
+    Implements `BoundaryCondition`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            # Dirichlet (prescribed displacements) boundary condition constraining the x and y degrees of freedom on the +y boundary.
+            [pylithapp.problem.bc.bc_ypos]
+            constrained_dof = [0, 1]
+            label = boundary_ypos
+            field = displacement
+
+            use_initial = False
+            use_time_history = True
+            db_auxiliary_field = spatialdata.spatialdb.UniformDB
+            db_auxiliary_field.description = Displacement Dirichlet BC +y boundary
+            db_auxiliary_field.values = [time_history_amplitude_x, time_history_amplitude_y, time_history_start_time]
+            db_auxiliary_field.data = [1.0*m, 0.0*m, 0.0]
+
+            time_history = spatialdata.spatialdb.TimeHistory
+            time_history.description = Impulse time history
+            time_history.filename = impulse.timedb
+            """,
+    }
+
 
     import pythia.pyre.inventory
 
-    constrainedDOF = pythia.pyre.inventory.array(
-        "constrained_dof", converter=int, default=[])
-    constrainedDOF.meta[
-        'tip'] = "Array of constrained degrees of freedom (0=1st DOF, 1=2nd DOF, etc)."
+    constrainedDOF = pythia.pyre.inventory.array("constrained_dof", converter=int, default=[])
+    constrainedDOF.meta['tip'] = "Array of constrained degrees of freedom (0=1st DOF, 1=2nd DOF, etc)."
 
     useInitial = pythia.pyre.inventory.bool("use_initial", default=True)
     useInitial.meta['tip'] = "Use initial term in time-dependent expression."
@@ -45,13 +64,11 @@ class DirichletTimeDependent(BoundaryCondition, ModuleDirichletTimeDependent):
     useRate = pythia.pyre.inventory.bool("use_rate", default=False)
     useRate.meta['tip'] = "Use rate term in time-dependent expression."
 
-    useTimeHistory = pythia.pyre.inventory.bool(
-        "use_time_history", default=False)
+    useTimeHistory = pythia.pyre.inventory.bool("use_time_history", default=False)
     useTimeHistory.meta['tip'] = "Use time history term in time-dependent expression."
 
-    dbTimeHistory = pythia.pyre.inventory.facility(
-        "time_history", factory=NullComponent, family="temporal_database")
-    dbTimeHistory.meta['tip'] = "Time history with normalized amplitude as a function of time."
+    dbTimeHistory = pythia.pyre.inventory.facility("time_history", factory=NullComponent, family="temporal_database")
+    dbTimeHistory.meta['tip'] = "Time history with normalized amplitude."
 
     def __init__(self, name="dirichlettimedependent"):
         """Constructor.
@@ -69,16 +86,15 @@ class DirichletTimeDependent(BoundaryCondition, ModuleDirichletTimeDependent):
         """
         import numpy
 
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log(
                 "Performing minimal initialization of time-dependent Dirichlet boundary condition '%s'." % self.aliases[-1])
 
         BoundaryCondition.preinitialize(self, problem)
 
         ModuleDirichletTimeDependent.setConstrainedDOF(
-            self, numpy.array(self.constrainedDOF, dtype=numpy.int32))
+            self, numpy.array(self.constrainedDOF, dtype=numpy.intc))
         ModuleDirichletTimeDependent.useInitial(self, self.useInitial)
         ModuleDirichletTimeDependent.useRate(self, self.useRate)
         ModuleDirichletTimeDependent.useTimeHistory(self, self.useTimeHistory)
@@ -98,19 +114,28 @@ class DirichletTimeDependent(BoundaryCondition, ModuleDirichletTimeDependent):
                                  (d, self.aliases[-1], spaceDim))
         return
 
+    def _validate(self, context):
+        if 0 == len(self.constrainedDOF):
+            trait = self.inventory.getTrait("constrained_dof")
+            self._validationError(context, trait, f"No constrained degrees of freedom found for time-dependent Dirichlet boundary condition '{self.aliases[-1]}'. "
+                "'constrained_dof' must be a zero-based integer array (0=x, 1=y, 2=z).")
+        if self.inventory.useTimeHistory and isinstance(self.inventory.dbTimeHistory, NullComponent):
+            trait = self.inventory.getTrait("time_history")
+            self._validationError(context, trait,
+                f"Missing time history database for time-dependent Dirichlet boundary condition '{self.aliases[-1]}'.")
+        if not self.inventory.useTimeHistory and not isinstance(self.inventory.dbTimeHistory, NullComponent):
+            self._warning.log(
+                f"Time history for time-dependent Dirichlet boundary condition '{self.aliases[-1]}' not enabled. Ignoring provided time history database.")
+
+    def _validationError(self, context, trait, msg):
+        from pythia.pyre.inventory.Item import Item
+        error = ValueError(msg)
+        descriptor = self.getTraitDescriptor(trait.name)
+        context.error(error, items=[Item(trait, descriptor)])
+
     def _configure(self):
         """Setup members using inventory.
         """
-        if 0 == len(self.constrainedDOF):
-            raise ValueError("'constrained_dof' must be a zero based integer array of indices corresponding to the "
-                             "constrained degrees of freedom.")
-        if self.inventory.useTimeHistory and isinstance(self.inventory.dbTimeHistory, NullComponent):
-            raise ValueError(
-                "Missing time history database for time-dependent Dirichlet boundary condition '%s'." % self.aliases[-1])
-        if not self.inventory.useTimeHistory and not isinstance(self.inventory.dbTimeHistory, NullComponent):
-            self._warning.log(
-                "Ignoring time history database setting for time-dependent Dirichlet boundary condition '%s'." % self.aliases[-1])
-
         BoundaryCondition._configure(self)
         return
 

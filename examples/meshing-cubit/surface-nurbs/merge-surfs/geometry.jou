@@ -1,0 +1,119 @@
+# -*- Python -*- (syntax highlighting)
+# ----------------------------------------------------------------------
+#
+# Brad T. Aagaard, U.S. Geological Survey
+# Charles A. Williams, GNS Science
+# Matthew G. Knepley, University of Buffalo
+#
+# This code was developed as part of the Computational Infrastructure
+# for Geodynamics (http://geodynamics.org).
+#
+# Copyright (c) 2010-2022 University of California, Davis
+#
+# See LICENSE.md for license information.
+#
+# ----------------------------------------------------------------------
+#
+# CUBIT journal file with geometry for example showing how to merge
+# planar surfaces.
+#
+# We also use the CUBIT support for APREPRO (the expressions in
+# braces), which includes units and mathematical functions. See the
+# APREPRO section in the appendix of the CUBIT documentation for more
+# information.
+#
+# ----------------------------------------------------------------------
+# Set units to SI.
+# ----------------------------------------------------------------------
+${Units('si')}
+#
+# ----------------------------------------------------------------------
+# Reset geometry.
+# ----------------------------------------------------------------------
+reset
+
+# ----------------------------------------------------------------------
+# Create block
+# ----------------------------------------------------------------------
+# Block is 100 km x 100 km x 50 km
+${blockLength=100.0*km}
+${blockWidth=100.0*km}
+${blockHeight=50.0*km}
+
+brick x {blockLength} y {blockWidth} z {blockHeight}
+${idVolDomain=Id("volume")}
+
+# Translate block so the top is at z=0
+volume {idVolDomain} move x {domain_x} y {domain_y} z {-0.5*blockHeight}
+
+# ----------------------------------------------------------------------
+# Create fault comprised of multiple planar segments 
+# ----------------------------------------------------------------------
+# Offset between surface traces
+${perpOffset=5.0*km}
+${parallelOffset=10.0*km}
+${faultMaxDepth=15.0*km}
+
+# Dimensions of fault for x < 0
+${faultLengthN=20.0*km}
+${faultDipN=80.0}
+
+# Dimensions of fault for x > 0
+${faultLengthP=30.0*km}
+${faultDipP=70.0}
+
+${xN=-0.5*parallelOffset - faultLengthN}
+${xNM=-0.5*parallelOffset}
+${yNTop=-0.5*perpOffset}
+${yNBot=yNTop - faultMaxDepth/tand(faultDipN)}
+create vertex x {xN} y {yNTop} z 0.0
+${idNTop=Id("vertex")}
+create vertex x {xN} y {yNBot} z {-faultMaxDepth}
+${idNBot=Id("vertex")}
+
+create vertex x {xNM} y {yNTop} z 0.0
+${idNMTop=Id("vertex")}
+create vertex x {xNM} y {yNBot} z {-faultMaxDepth}
+${idNMBot=Id("vertex")}
+
+${xP=+0.5*parallelOffset + faultLengthP}
+${xPM=+0.5*parallelOffset}
+${yPTop=+0.5*perpOffset}
+${yPBot=yPTop - faultMaxDepth/tand(faultDipP)}
+create vertex x {xPM} y {yPTop} z 0.0
+${idPMTop=Id("vertex")}
+create vertex x {xPM} y {yPBot} z {-faultMaxDepth}
+${idPMBot=Id("vertex")}
+
+create vertex x {xP} y {yPTop} z 0.0
+${idPTop=Id("vertex")}
+create vertex x {xP} y {yPBot} z {-faultMaxDepth}
+${idPBot=Id("vertex")}
+
+# Create planar surfaces
+create surface vertex {idNTop} {idNBot} {idNMBot} {idNMTop}
+${idVolFaultN=Id("volume")}
+create surface vertex {idNMTop} {idNMBot} {idPMBot} {idPMTop}
+${idVolFaultM=Id("volume")}
+create surface vertex {idPMTop} {idPMBot} {idPBot} {idPTop}
+${idVolFaultP=Id("volume")}
+
+# Merge surfaces
+unite volume {idVolFaultN} {idVolFaultM} {idVolFaultP}
+${idVolFault=2}
+
+# ----------------------------------------------------------------------
+# Divide volumes using interface surfaces
+# ----------------------------------------------------------------------
+subtract volume {idVolFault} from volume {idVolDomain}
+
+
+# End of file
+
+
+
+
+
+
+
+

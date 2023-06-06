@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -23,7 +23,7 @@
 
 namespace pylith {
     namespace materials {
-        class Poroelasticity : public pylith::materials::Material {
+        class Poroelasticity: public pylith::materials::Material {
             // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////
 public:
 
@@ -59,6 +59,18 @@ public:
              * @returns True if including source density term, false otherwise.
              */
             bool useSourceDensity(void) const;
+
+            /** Update fields?
+             *
+             * @param[in] value Flag indicating to update the auxiliary field values over time.
+             */
+            void useStateVars(const bool value);
+
+            /** Update fields?
+             *
+             * @param[in] value Flag indicating to update the auxiliary field values over time.
+             */
+            bool useStateVars(void) const;
 
             /** Set bulk rheology.
              *
@@ -106,6 +118,15 @@ public:
             pylith::topology::Field* createDerivedField(const pylith::topology::Field& solution,
                                                         const pylith::topology::Mesh& domainMesh);
 
+            /** Get default PETSc solver options appropriate for material.
+             *
+             * @param[in] isParallel True if running in parallel, False if running in serial.
+             * @param[in] hasFault True if problem has fault, False otherwise.
+             * @returns PETSc solver options.
+             */
+            pylith::utils::PetscOptions* getSolverDefaults(const bool isParallel,
+                                                           const bool hasFault) const;
+
             // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////
 protected:
 
@@ -125,7 +146,7 @@ protected:
              *
              * @return Derived factory for physics object.
              */
-            pylith::topology::FieldFactory* _getDerivedFactory(void);            
+            pylith::topology::FieldFactory* _getDerivedFactory(void);
 
         }; // class Poroelasticity
 

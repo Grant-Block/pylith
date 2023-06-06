@@ -4,14 +4,59 @@
     "telemetry.enableCrashReporter": false,
     "uncrustify.configPath.linux": "developer/uncrustify.cfg",
     "uncrustify.configPath.osx": "developer/uncrustify.cfg",
+    "[markdown]": {
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 100,
+    },
     "files.associations": {
-        "string": "cpp",
         "*.icc": "cpp",
-        "vector": "cpp",
-        "stdexcept": "cpp"
+        "iosfwd": "cpp"
     },
     "python.formatting.autopep8Args": [
         "-max-line-length",
         "120"
-    ]
+    ],
+    "testMate.cpp.log.logpanel": true,
+    "testMate.cpp.log.logfile": "/Users/baagaard/src/cig/pylith/test.log",
+    "testMate.cpp.test.advancedExecutables": [
+        {
+            "name": "${filename}",
+            "pattern": "${os_env:PYLITH_BUILDDIR}/tests/mmstests/**/.libs/mmstest_*",
+            "cwd": "${absDirpath}/.."
+        }
+    ],
+    "cSpell.words": [
+        "Aagaard",
+        "aprepro",
+        "automake",
+        "autotools",
+        "cuda",
+        "deviatoric",
+        "discretization",
+        "dm",
+        "drucker",
+        "elastoplastic",
+        "Knepley",
+        "neumann",
+        "nodeset",
+        "partitioner",
+        "petsc",
+        "plex",
+        "pointwise",
+        "prager",
+        "preconditioner",
+        "prestep",
+        "pset",
+        "pylith",
+        "raphson",
+        "scec",
+        "snes",
+        "spatialdata",
+        "spatialdb",
+        "trelis",
+        "viscoelastic",
+        "xdmf"
+    ],
+    "C_Cpp.default.cppStandard": "c++14",
+    "C_Cpp.default.cStandard": "c11"
 }

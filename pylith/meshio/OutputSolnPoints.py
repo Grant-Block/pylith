@@ -2,34 +2,52 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pythia.pyre/meshio/OutputSolnPoints.py
-#
-# @brief Python object for managing output of finite-element solution
-# information over a subdomain.
-#
-# FACTORY: observer
 
 from .OutputSoln import OutputSoln
 from .meshio import OutputSolnPoints as ModuleOutputSolnPoints
 
 
 class OutputSolnPoints(OutputSoln, ModuleOutputSolnPoints):
-    """Python object for managing output of finite-element solution
-    information over a subdomain.
-
-    FACTORY: observer
     """
+    Output of solution subfields at discrete points in the domain.
+
+    :::{tip}
+    Most output information can be configured at the problem level using the [`ProblemDefaults` Component](../problems/ProblemDefaults.md).
+    :::
+
+    Implements `OutputSoln`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [observer]
+            label = stations
+            data_fields = [displacement]
+
+            # List of points where we want output.
+            reader = pylith.meshio.PointsList
+            reader.filename = stations.txt
+
+            # Skip two time steps between output.
+            output_trigger = pylith.meshio.OutputTriggerStep
+            output_trigger.num_skip = 2
+
+            # Write output to HDF5 file with name `domain.h5`.
+            writer = pylith.meshio.DataWriterHDF5
+            writer.filename = domain.h5
+
+            output_basis_order = 1
+        """
+    }
 
     import pythia.pyre.inventory
 

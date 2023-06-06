@@ -2,60 +2,45 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/materials/RheologyIncompressibleElasticity.py
-#
-# @brief Python material for isotropic, linearly elastic, plane
-# strain material.
-#
-# Factory: incompressible_elasticity_rheology
 
 from pylith.utils.PetscComponent import PetscComponent
 from .materials import RheologyIncompressibleElasticity as ModuleRheology
 
 
 class RheologyIncompressibleElasticity(PetscComponent, ModuleRheology):
-    """Python object for bulk rheology of an incompressible elastic material.
-
-    FACTORY: incompressible_elasticity_rheology
+    """
+    Abstract base class for bulk rheology of incompressible elastic material.
     """
     import pythia.pyre.inventory
 
     from pylith.topology.Subfield import subfieldFactory
     from pylith.utils.EmptyBin import EmptyBin
 
-    auxiliarySubfields = pythia.pyre.inventory.facilityArray(
-        "auxiliary_subfields", itemFactory=subfieldFactory, factory=EmptyBin)
+    auxiliarySubfields = pythia.pyre.inventory.facilityArray("auxiliary_subfields", itemFactory=subfieldFactory, factory=EmptyBin)
     auxiliarySubfields.meta['tip'] = "Discretization information for physical properties and state variables."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
-    def __init__(self, name):
+    def __init__(self, name="rheologyincompressibleelasticity"):
         """Constructor.
         """
-        PetscComponent.__init__(
-            self, name, facility="rheologyincompressibleelasticity")
-        return
+        PetscComponent.__init__(self, name, facility="rheologyincompressibleelasticity")
 
     def preinitialize(self, problem):
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log("Performing minimal initialization of incompressible elasticity rheology '%s'." %
                            self.aliases[-1])
 
         self._createModuleObj()
-        return
 
     def addAuxiliarySubfields(self, material, problem):
         for subfield in self.auxiliarySubfields.components():
@@ -66,10 +51,7 @@ class RheologyIncompressibleElasticity(PetscComponent, ModuleRheology):
             else:
                 quadOrder = subfield.quadOrder
             material.setAuxiliarySubfieldDiscretization(fieldName, subfield.basisOrder, quadOrder, subfield.dimension,
-                                                        subfield.cellBasis, subfield.isBasisContinuous, subfield.feSpace)
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
+                                                        subfield.cellBasis, subfield.feSpace, subfield.isBasisContinuous)
 
     def _createModuleObj(self):
         """Call constructor for module object for access to C++ object.

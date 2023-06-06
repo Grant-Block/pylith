@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -45,19 +45,16 @@ public:
      *
      * @param faultMesh Finite-element mesh of fault (output).
      * @param mesh Finite-element mesh of domain.
-     * @param groupdField Group of vertices assocated with faces of
-     *   cells defining fault surface
+     * @param surfaceLabel Label for points on fault surface.
+     * @param surfaceLabelValue Value for label for points on fault surface.
      */
     static
     void createFault(topology::Mesh* faultMesh,
                      const topology::Mesh& mesh,
-                     DMLabel groupField);
+                     PetscDMLabel surfaceLabel,
+                     const int surfaceLabelValue);
 
     /** Create cohesive cells in an interpolated mesh.
-     *
-     * If firstFaultVertex == 0, then firstFaultVertex is set to the first point
-     * not currently used in the mesh, and firstFaultCell is incremented with this
-     * point. These values are updated as new fault vertices and cells are added.
      *
      * @param fault Finite-element mesh of fault (output)
      * @param mesh Finite-element mesh
@@ -67,7 +64,8 @@ public:
     void create(topology::Mesh* mesh,
                 const topology::Mesh& faultMesh,
                 PetscDMLabel faultBdLabel,
-                const int materialId);
+                const int faultBdLabelValue,
+                const int cohesiveLabelValue);
 
     /** Create (distributed) fault mesh from cohesive cells.
      *
@@ -95,6 +93,34 @@ public:
                          PointSet& replaceCells,
                          PointSet& noReplaceCells,
                          const int debug);
+
+    /** Get name of PETSc DM label for interfaces.
+     *
+     * @returns PETSc Label name.
+     */
+    static
+    const char* getInterfacesLabelName(void);
+
+    /** Get PETSc DM label for interfaces, creating if necessary.
+     *
+     * @param[inout] dm PETSc DM holding interfaces label.
+     * @returns PETSc DM label for interfaces.
+     */
+    static
+    PetscDMLabel getInterfacesLabel(PetscDM dm);
+
+    /** Get cells adjacent to cohesive cell on negative and positive sides of the fault.
+     *
+     * @param[out] adjacentCellNegative Adjacent cell on negative side of the fault.
+     * @param[out] adjacentCellPositive Adjacent cell on positive side of the fault.
+     * @param[in] dmMesh DM for finite-element mesh.
+     * @param[in] cohesiveCell Cohesive cell.
+     */
+    static
+    void getAdjacentCells(PylithInt* adjacentCellNegative,
+                          PylithInt* adjacentCellPositive,
+                          PetscDM dmMesh,
+                          const PylithInt cohesiveCell);
 
 }; // class TopologyOps
 

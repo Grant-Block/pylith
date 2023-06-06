@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2021 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -28,7 +28,7 @@
 #include "pylith/utils/journals.hh" // USES PYLITH_COMPONENT_*
 #include "pylith/utils/error.hh" // USES PYLITH_METHOD_BEGIN/END
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::faults::KinSrcTimeHistory::KinSrcTimeHistory(void) :
     _dbTimeHistory(NULL) {
@@ -36,14 +36,14 @@ pylith::faults::KinSrcTimeHistory::KinSrcTimeHistory(void) :
 } // constructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::faults::KinSrcTimeHistory::~KinSrcTimeHistory(void) {
     _dbTimeHistory = NULL; // :KLUDGE: Use shared pointer.
 } // destructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Set time history database.
 void
 pylith::faults::KinSrcTimeHistory::setTimeHistoryDB(spatialdata::spatialdb::TimeHistory* th) {
@@ -53,7 +53,7 @@ pylith::faults::KinSrcTimeHistory::setTimeHistoryDB(spatialdata::spatialdb::Time
 } // setTimeHistoryDB
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Get time history database.
 const spatialdata::spatialdb::TimeHistory*
 pylith::faults::KinSrcTimeHistory::getTimeHistoryDB(void) {
@@ -61,25 +61,26 @@ pylith::faults::KinSrcTimeHistory::getTimeHistoryDB(void) {
 } // getTimeHistoryDB
 
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Update slip subfield to current time.
+// ------------------------------------------------------------------------------------------------
+// Get requested slip subfields at time t.
 void
-pylith::faults::KinSrcTimeHistory::updateSlip(PetscVec slipLocalVec,
-                                              pylith::topology::Field* faultAuxiliaryField,
-                                              const double t,
-                                              const double timeScale) {
+pylith::faults::KinSrcTimeHistory::getSlipSubfields(PetscVec slipLocalVec,
+                                                    pylith::topology::Field* faultAuxiliaryField,
+                                                    const PylithScalar t,
+                                                    const PylithScalar timeScale,
+                                                    const int bitSlipSubfields) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_COMPONENT_DEBUG("updateSlip(slipLocalVec="<<slipLocalVec<<", faultAuxiliaryField="<<faultAuxiliaryField
-                                                     <<", t="<<t<<", timeScale="<<timeScale<<")");
-
+    PYLITH_COMPONENT_DEBUG("getSlipSubfields="<<slipLocalVec<<", faultAuxiliaryField="<<faultAuxiliaryField
+                                              <<", t="<<t<<", timeScale="<<timeScale
+                                              <<", bitSlipSubfields="<<bitSlipSubfields<<")");
     KinSrcAuxiliaryFactory::updateTimeHistoryValue(_auxiliaryField, t, timeScale, _dbTimeHistory);
-    KinSrc::updateSlip(slipLocalVec, faultAuxiliaryField, t, timeScale);
+    KinSrc::getSlipSubfields(slipLocalVec, faultAuxiliaryField, t, timeScale, bitSlipSubfields);
 
     PYLITH_METHOD_END;
-} // updateSlip
+} // getSlipSubfields
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Slip time function kernel.
 void
 pylith::faults::KinSrcTimeHistory::slipFn(const PylithInt dim,
@@ -122,12 +123,16 @@ pylith::faults::KinSrcTimeHistory::slipFn(const PylithInt dim,
         for (PylithInt i = 0; i < dim; ++i) {
             slip[i] = finalSlip[i] * timeHistoryValue;
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slip[i] = 0.0;
+        } // for
+    } // if/else
 
 } // slipFn
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Slip rate time function kernel.
 void
 pylith::faults::KinSrcTimeHistory::slipRateFn(const PylithInt dim,
@@ -170,12 +175,68 @@ pylith::faults::KinSrcTimeHistory::slipRateFn(const PylithInt dim,
         for (PylithInt i = 0; i < dim; ++i) {
             slipRate[i] = finalSlip[i] * timeHistoryValue;
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipRate[i] = 0.0;
+        } // for
+    } // if/else
 
 } // slipRateFn
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Slip acceleration time function kernel.
+void
+pylith::faults::KinSrcTimeHistory::slipAccFn(const PylithInt dim,
+                                             const PylithInt numS,
+                                             const PylithInt numA,
+                                             const PylithInt sOff[],
+                                             const PylithInt sOff_x[],
+                                             const PylithScalar s[],
+                                             const PylithScalar s_t[],
+                                             const PylithScalar s_x[],
+                                             const PylithInt aOff[],
+                                             const PylithInt aOff_x[],
+                                             const PylithScalar a[],
+                                             const PylithScalar a_t[],
+                                             const PylithScalar a_x[],
+                                             const PylithReal t,
+                                             const PylithScalar x[],
+                                             const PylithInt numConstants,
+                                             const PylithScalar constants[],
+                                             PylithScalar slipAcc[]) {
+    const PylithInt _numA = 3;
+
+    assert(_numA == numA);
+    assert(aOff);
+    assert(a);
+    assert(slipAcc);
+
+    const PylithInt i_initiationTime = 0;
+    const PylithInt i_finalSlip = 1;
+    const PylithInt i_timeHistoryValue = 2;
+    const PylithScalar initiationTime = a[aOff[i_initiationTime]];
+    const PylithScalar* finalSlip = &a[aOff[i_finalSlip]];
+    const PylithScalar timeHistoryValue = a[aOff[i_timeHistoryValue]];
+
+    const PylithInt i_originTime = 0;
+    const PylithScalar originTime = constants[i_originTime];
+    const PylithScalar t0 = originTime + initiationTime;
+
+    if (t >= t0) {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipAcc[i] = finalSlip[i] * timeHistoryValue;
+        } // for
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipAcc[i] = 0.0;
+        } // for
+    } // if/else
+
+} // slipAccFn
+
+
+// ------------------------------------------------------------------------------------------------
 // Preinitialize earthquake source. Set names/sizes of auxiliary subfields.
 void
 pylith::faults::KinSrcTimeHistory::_auxiliaryFieldSetup(const spatialdata::units::Nondimensional& normalizer,
@@ -199,6 +260,7 @@ pylith::faults::KinSrcTimeHistory::_auxiliaryFieldSetup(const spatialdata::units
 
     _slipFnKernel = pylith::faults::KinSrcTimeHistory::slipFn;
     _slipRateFnKernel = pylith::faults::KinSrcTimeHistory::slipRateFn;
+    _slipAccFnKernel = pylith::faults::KinSrcTimeHistory::slipAccFn;
 
     PYLITH_METHOD_END;
 } // _auxiliaryFieldSetup

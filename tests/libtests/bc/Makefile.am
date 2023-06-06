@@ -4,21 +4,19 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
 
-subpackage = bc
-include $(top_srcdir)/subpackage.am
-include $(top_srcdir)/check.am
+include $(top_srcdir)/tests/check_cppunit.am
 
 SUBDIRS = data
 
@@ -28,7 +26,7 @@ check_PROGRAMS = test_bc
 
 # Primary source files
 test_bc_SOURCES = \
-	test_driver.cc
+	$(top_srcdir)/tests/src/driver_cppunit.cc
 
 #	TestBoundaryMesh.cc \
 #	TestBoundaryMesh_Cases.cc \
@@ -40,29 +38,11 @@ test_bc_SOURCES = \
 #	TestAbsorbingDampers_Cases.cc
 
 
-noinst_HEADERS = \
+dist_noinst_HEADERS = \
 	TestBoundaryMesh.hh \
 	TestDirichletTimeDependent.hh \
 	TestNeumannTimeDependent.hh \
 	TestAbsorbingDampers.hh
-
-
-AM_CPPFLAGS += \
-	$(PYTHON_EGG_CPPFLAGS) -I$(PYTHON_INCDIR) \
-	$(PETSC_SIEVE_FLAGS) $(PETSC_CC_INCLUDES)
-
-test_bc_LDFLAGS = \
-	$(AM_LDFLAGS) $(PYTHON_LA_LDFLAGS)
-
-test_bc_LDADD = \
-	-lcppunit \
-	$(top_builddir)/libsrc/pylith/libpylith.la \
-	-lspatialdata \
-	$(PETSC_LIB) $(PYTHON_BLDLIBRARY) $(PYTHON_LIBS) $(PYTHON_SYSLIBS)
-
-if ENABLE_CUBIT
-  test_bc_LDADD += -lnetcdf
-endif
 
 
 # End of file

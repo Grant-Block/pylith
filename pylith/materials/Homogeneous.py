@@ -2,26 +2,27 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/materials/Homogeneous.py
-#
-# @brief Python materials container with one material.
 
 from pylith.utils.PetscComponent import PetscComponent
 
 
 class Homogeneous(PetscComponent):
-    """Python materials container with one material.
+    """
+    Materials container with one material.
+
+    :::{seealso}
+    See [`Problems` Component](../problems/Problem.md).
+    :::
     """
 
     import pythia.pyre.inventory
@@ -36,7 +37,6 @@ class Homogeneous(PetscComponent):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="material")
-        return
 
 
 # End of file

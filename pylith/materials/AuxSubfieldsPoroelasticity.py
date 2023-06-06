@@ -2,25 +2,39 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/materials/AuxSubieldsPoroelasticity.py
-#
-# @brief Python container for poroelasticity equation subfields.
 
 from pylith.utils.PetscComponent import PetscComponent
 
 
 class AuxSubfieldsPoroelasticity(PetscComponent):
+    """
+    Auxiliary subfields associated with the poroelasticity equation.
+
+    Setting the parameters for a subfield does not turn on its use.
+    The [`Poroelasticity` Component](Poroelasticity.md) has flags for including or excluding terms in the poroelasticity equation.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.problem.materials.mat_poroelastic.auxiliary_fields]
+            porosity.basis_order = 1
+            solid_density.basis_order = 1
+            fluid_density.basis_order = 0
+            fluid_viscosity.basis_order = 1
+            body_force.basis_order = 1
+            source_density.basis_order = 1
+            gravitational_acceleration.basis_order = 0
+        """
+    }
     """Python container for poroelasticity equation subfields.
 
     FACTORY: auxiliary_subfields
@@ -48,23 +62,16 @@ class AuxSubfieldsPoroelasticity(PetscComponent):
     sourceDensity = pythia.pyre.inventory.facility("source_density", family="auxiliary_subfield", factory=Subfield)
     sourceDensity.meta['tip'] = "Source density subfield."    
 
-    gravitationalAcceleration = pythia.pyre.inventory.facility(
-        "gravitational_acceleration", family="auxiliary_subfield", factory=Subfield)
+    gravitationalAcceleration = pythia.pyre.inventory.facility("gravitational_acceleration", family="auxiliary_subfield", factory=Subfield)
     gravitationalAcceleration.meta['tip'] = "Gravitational acceleration subfield."
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
 
     def __init__(self, name="auxsubfieldsporoelasticity"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="auxiliary_subfields")
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
 
     def _configure(self):
         PetscComponent._configure(self)
-        return
 
 
 # FACTORIES ////////////////////////////////////////////////////////////

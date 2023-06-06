@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -29,27 +29,26 @@
 
 #include <typeinfo> // USES typeid()
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::materials::RheologyElasticity::RheologyElasticity(void) :
-    _lhsJacobianTriggers(pylith::feassemble::Integrator::NEW_JACOBIAN_NEVER)
-{}
+    _lhsJacobianTriggers(pylith::feassemble::Integrator::NEW_JACOBIAN_NEVER) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::materials::RheologyElasticity::~RheologyElasticity(void) {
     deallocate();
 } // destructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Deallocate PETSc and local data structures.
 void
 pylith::materials::RheologyElasticity::deallocate(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Get triggers for needing to compute the elastic constants for the RHS Jacobian.
 int
 pylith::materials::RheologyElasticity::getLHSJacobianTriggers(void) const {
@@ -57,7 +56,7 @@ pylith::materials::RheologyElasticity::getLHSJacobianTriggers(void) const {
 } // getLHSJacobianTriggers
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Update kernel constants.
 void
 pylith::materials::RheologyElasticity::updateKernelConstants(pylith::real_array* kernelConstants,
@@ -71,7 +70,7 @@ pylith::materials::RheologyElasticity::updateKernelConstants(pylith::real_array*
 } // updateKernelConstants
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add kernels for updating state variables.
 void
 pylith::materials::RheologyElasticity::addKernelsUpdateStateVars(std::vector<pylith::feassemble::IntegratorDomain::ProjectKernels>* kernels,

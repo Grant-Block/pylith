@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -86,11 +86,26 @@ public:
                          const PylithInt tindex,
                          const pylith::topology::Field& solution);
 
+    // PRIVATE METHODS /////////////////////////////////////////////////////////////////////////////////////////////////
+private:
+
+    /** Comparison function for keeping set of observers in order.
+     *
+     * @param[in] a Solution observer a.
+     * @param[in] b Solution observer b.
+     * @returns True if a->index < b->index, False otherwise.
+     */
+    struct _compare {
+        bool operator()(const ObserverSoln* a,
+                        const ObserverSoln* b) const;
+
+    };
+
     // PRIVATE MEMBERS /////////////////////////////////////////////////////////////////////////////////////////////////
 private:
 
     typedef std::set<pylith::problems::ObserverSoln*>::iterator iterator; ///< Iterator.
-    std::set<pylith::problems::ObserverSoln*> _observers; ///< Subscribers of updates.
+    std::set<pylith::problems::ObserverSoln*, _compare> _observers; ///< Subscribers of updates.
 
     // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
 private:

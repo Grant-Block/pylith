@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -21,6 +21,7 @@
 #include "TestDataWriterSubmesh.hh" // Implementation of class methods
 
 #include "FieldFactory.hh" // USES FieldFactory
+#include "tests/src/FaultCohesiveStub.hh" // USES FaultCohesiveStub
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/MeshOps.hh" // USES MeshOps::nondimensionalize()
@@ -29,7 +30,6 @@
 #include "pylith/topology/VisitorMesh.hh" // USES VecVisitorMesh
 #include "pylith/meshio/MeshIOAscii.hh" // USES MeshIOAscii
 #include "pylith/meshio/DataWriter.hh" // USES DataWriter
-#include "pylith/testing/FaultCohesiveStub.hh" // USES FaultCohesiveStub
 
 #include "spatialdata/geocoords/CSCart.hh" // USES CSCart
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
@@ -72,11 +72,11 @@ pylith::meshio::TestDataWriterSubmesh::_initialize(void) {
 
     delete _mesh;_mesh = new pylith::topology::Mesh;CPPUNIT_ASSERT(_mesh);
     MeshIOAscii iohandler;
-    iohandler.filename(data->meshFilename);
+    iohandler.setFilename(data->meshFilename);
     iohandler.read(_mesh);
 
     spatialdata::geocoords::CSCart cs;
-    cs.setSpaceDim(_mesh->dimension());
+    cs.setSpaceDim(_mesh->getDimension());
     _mesh->setCoordSys(&cs);
 
     spatialdata::units::Nondimensional normalizer;
@@ -85,13 +85,14 @@ pylith::meshio::TestDataWriterSubmesh::_initialize(void) {
 
     if (data->faultLabel) {
         pylith::faults::FaultCohesiveStub fault;
-        fault.setSurfaceMarkerLabel(data->faultLabel);
-        fault.setInterfaceId(data->faultId);
+        fault.setSurfaceLabelName(data->faultLabel);
+        fault.setCohesiveLabelValue(data->faultId);
         fault.adjustTopology(_mesh);
     } // if
 
     CPPUNIT_ASSERT(data->bcLabel);
-    delete _submesh;_submesh = pylith::topology::MeshOps::createLowerDimMesh(*_mesh, data->bcLabel);CPPUNIT_ASSERT(_submesh);
+    const int labelValue = 1;
+    delete _submesh;_submesh = pylith::topology::MeshOps::createLowerDimMesh(*_mesh, data->bcLabel, labelValue);CPPUNIT_ASSERT(_submesh);
 
     PYLITH_METHOD_END;
 } // _initialize

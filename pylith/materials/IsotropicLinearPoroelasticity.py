@@ -2,14 +2,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -25,10 +25,20 @@ from .materials import IsotropicLinearPoroelasticity as ModuleLinearPoroelastici
 
 
 class IsotropicLinearPoroelasticity(RheologyPoroelasticity, ModuleLinearPoroelasticity):
-    """Python material for isotropic, linearly poroelastic plane strain.
-
-    FACTORY: poroelasticity_rheology
     """
+    Isotropic linear incompressible elastic bulk rheology.
+
+    Implements `RheologyIncompressibleElasticity`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.problem.materials.mat_incompelastic.rheology]
+            use_reference_state = False
+
+            auxiliary_subfields.shear_modulus.basis_order = 0
+            auxiliary_subfields.bulk_modulus.basis_order = 0
+        """
+    }
 
     import pythia.pyre.inventory
 

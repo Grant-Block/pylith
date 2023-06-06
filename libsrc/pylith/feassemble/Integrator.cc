@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, Rice University
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -26,6 +26,7 @@
 #include "pylith/problems/Physics.hh" // USES Physics
 
 #include "pylith/utils/EventLogger.hh" // USES EventLogger
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL_*
 
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
@@ -42,9 +43,12 @@ pylith::feassemble::Integrator::Integrator(pylith::problems::Physics* const phys
     _labelValue(1),
     _lhsJacobianTriggers(NEW_JACOBIAN_NEVER),
     _lhsJacobianLumpedTriggers(NEW_JACOBIAN_NEVER),
+    _hasRHSResidual(false),
+    _hasLHSResidual(false),
+    _hasLHSJacobian(false),
+    _hasLHSJacobianLumped(false),
     _needNewLHSJacobian(true),
-    _needNewLHSJacobianLumped(true)
-{}
+    _needNewLHSJacobianLumped(true) {}
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -159,17 +163,15 @@ pylith::feassemble::Integrator::initialize(const pylith::topology::Field& soluti
 } // initialize
 
 
-#include <iostream>
-
 // ---------------------------------------------------------------------------------------------------------------------
-// Update auxiliary field values to current time.
+// Set auxiliary field values for current time.
 void
-pylith::feassemble::Integrator::updateState(const PylithReal t) {
+pylith::feassemble::Integrator::setState(const PylithReal t) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_JOURNAL_DEBUG("updateState(t="<<t<<") empty method");
+    PYLITH_JOURNAL_DEBUG("setState(t="<<t<<") empty method");
 
     PYLITH_METHOD_END;
-} // updateState
+} // setState
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -202,18 +204,18 @@ pylith::feassemble::Integrator::_setKernelConstants(const pylith::topology::Fiel
     assert(_physics);
     const pylith::real_array& constants = _physics->getKernelConstants(dt);
 
-    PetscDM dmSoln = solution.dmMesh();assert(dmSoln);
+    PetscDM dmSoln = solution.getDM();assert(dmSoln);
     PetscInt numDS = 0;
     PetscErrorCode err = DMGetNumDS(dmSoln, &numDS);PYLITH_CHECK_ERROR(err);
     for (PetscInt i = 0; i < numDS; ++i) {
         PetscDMLabel* label = NULL;
         PetscIS* fields = NULL;
-        PetscDS prob = NULL;
-        err = DMGetRegionNumDS(dmSoln, i, label, fields, &prob);PYLITH_CHECK_ERROR(err);
+        PetscDS ds = NULL;
+        err = DMGetRegionNumDS(dmSoln, i, label, fields, &ds, NULL);PYLITH_CHECK_ERROR(err);
         if (constants.size() > 0) {
-            err = PetscDSSetConstants(prob, constants.size(), const_cast<double*>(&constants[0]));PYLITH_CHECK_ERROR(err);
+            err = PetscDSSetConstants(ds, constants.size(), const_cast<double*>(&constants[0]));PYLITH_CHECK_ERROR(err);
         } else {
-            err = PetscDSSetConstants(prob, 0, NULL);PYLITH_CHECK_ERROR(err);
+            err = PetscDSSetConstants(ds, 0, NULL);PYLITH_CHECK_ERROR(err);
         } // if/else
     } // for
 

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -106,7 +106,7 @@ pylith::topology::FieldQuery::setQuery(const char* subfield,
             query.queryValues[i] = queryValues[i];
         } // for
     } else {
-        const Field::SubfieldInfo& info = _field.subfieldInfo(subfield);
+        const Field::SubfieldInfo& info = _field.getSubfieldInfo(subfield);
         query.queryValues = info.description.componentNames;
     } // if/else
 
@@ -172,7 +172,7 @@ pylith::topology::FieldQuery::openDB(spatialdata::spatialdb::SpatialDB* db,
 
             _contexts[index].converter = query->second.converter;
             _contexts[index].db = dbSubfield;
-            _contexts[index].cs = _field.mesh().getCoordSys();
+            _contexts[index].cs = _field.getMesh().getCoordSys();
 
             if (dbSubfield) {
                 _FieldQuery::findQueryIndices(&_contexts[index], query->second.queryValues);
@@ -207,8 +207,8 @@ pylith::topology::FieldQuery::queryDB(void) {
 
     PetscErrorCode err = 0;
     PetscReal dummyTime = 0.0;
-    err = DMProjectFunctionLocal(_field.dmMesh(), dummyTime, _functions, (void**)_contextPtrs, INSERT_ALL_VALUES,
-                                 _field.localVector());PYLITH_CHECK_ERROR(err);
+    err = DMProjectFunctionLocal(_field.getDM(), dummyTime, _functions, (void**)_contextPtrs, INSERT_ALL_VALUES,
+                                 _field.getLocalVector());PYLITH_CHECK_ERROR(err);
 
     _logger->eventEnd(queryEvent);
 
@@ -239,10 +239,10 @@ pylith::topology::FieldQuery::queryDBLabel(const char* labelName,
     } // for
 
     PetscDMLabel dmLabel = NULL;
-    err = DMGetLabel(_field.dmMesh(), labelName, &dmLabel);PYLITH_CHECK_ERROR(err);
-    err = DMProjectFunctionLabelLocal(_field.dmMesh(), dummyTime, dmLabel, 1, &labelValue,
+    err = DMGetLabel(_field.getDM(), labelName, &dmLabel);PYLITH_CHECK_ERROR(err);assert(dmLabel);
+    err = DMProjectFunctionLabelLocal(_field.getDM(), dummyTime, dmLabel, 1, &labelValue,
                                       numSubfields, &subfieldIndices[0], _functions, (void**)_contextPtrs,
-                                      INSERT_ALL_VALUES, _field.localVector());PYLITH_CHECK_ERROR(err);
+                                      INSERT_ALL_VALUES, _field.getLocalVector());PYLITH_CHECK_ERROR(err);
 
     _logger->eventEnd(queryEvent);
 
@@ -309,7 +309,7 @@ pylith::topology::FieldQuery::queryDBPointFn(PylithInt dim,
         for (int i = 0; i < dim; ++i) {
             msg << "  " << xDim[i];
         }
-        msg << ") in spatial database '" << queryctx->db->getLabel() << "'.";
+        msg << ") in spatial database '" << queryctx->db->getDescription() << "'.";
         PYLITH_ERROR_RETURN(PETSC_COMM_SELF, PETSC_ERR_LIB, msg.str().c_str());
     } // if
 
@@ -322,7 +322,7 @@ pylith::topology::FieldQuery::queryDBPointFn(PylithInt dim,
             for (int i = 0; i < dim; ++i) {
                 msg << "  " << xDim[i];
             }
-            msg << ") in spatial database '" << queryctx->db->getLabel() << "'. "
+            msg << ") in spatial database '" << queryctx->db->getDescription() << "'. "
                 << invalidMsg;
             PYLITH_ERROR_RETURN(PETSC_COMM_SELF, PETSC_ERR_LIB, msg.str().c_str());
         }
@@ -342,7 +342,7 @@ pylith::topology::FieldQuery::queryDBPointFn(PylithInt dim,
                 for (int i = 0; i < dim; ++i) {
                     msg << "  " << xDim[i];
                 }
-                msg << ") from spatial database '" << queryctx->db->getLabel() << "'. ";
+                msg << ") from spatial database '" << queryctx->db->getDescription() << "'. ";
                 msg << invalidMsg;
                 PYLITH_ERROR_RETURN(PETSC_COMM_SELF, PETSC_ERR_LIB, msg.str().c_str());
             } // if
@@ -402,11 +402,11 @@ pylith::topology::_FieldQuery::findQueryIndices(FieldQuery::DBQueryContext* cont
             if (0 == numDBValues) {
                 delete dbValues;dbValues = NULL;
                 msg << "No values found in spatial database '"
-                    << context->db->getLabel() << "'. Did you forget to open the database?";
+                    << context->db->getDescription() << "'. Did you forget to open the database?";
                 throw std::logic_error(msg.str());
             } // if
             msg << "Could not find value '" << valuesForSubfield[iValue] << "' in spatial database '"
-                << context->db->getLabel() << "'. Available values are:";
+                << context->db->getDescription() << "'. Available values are:";
             for (size_t iValueDB = 0; iValueDB < numDBValues; ++iValueDB) {
                 msg << "\n  " << dbValues[iValueDB];
             } // for

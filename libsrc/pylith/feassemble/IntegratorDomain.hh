@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, Rice University
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2018 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -28,6 +28,7 @@
 #include "feassemblefwd.hh" // forward declarations
 
 #include "pylith/feassemble/Integrator.hh" // ISA Integrator
+#include "pylith/feassemble/JacobianValues.hh" // USES JacobianValues::JacobianKernels
 #include "pylith/utils/arrayfwd.hh" // HASA std::vector
 
 class pylith::feassemble::IntegratorDomain : public pylith::feassemble::Integrator {
@@ -38,20 +39,24 @@ public:
 
     /// Kernels (point-wise functions) for residual.
     struct ResidualKernels {
-        std::string subfield; ///< Name of subfield
+        std::string subfield; ///< Name of subfield.
+        EquationPart part; ///< Residual part (LHS or RHS).
         PetscPointFunc r0; ///< f0 (RHS) or g0 (LHS) function.
         PetscPointFunc r1; ///< f1 (RHS) or g1 (LHS) function.
 
         ResidualKernels(void) :
             subfield(""),
+            part(LHS),
             r0(NULL),
             r1(NULL) {}
 
 
         ResidualKernels(const char* subfieldValue,
+                        const EquationPart partValue,
                         PetscPointFunc r0Value,
                         PetscPointFunc r1Value) :
             subfield(subfieldValue),
+            part(partValue),
             r0(r0Value),
             r1(r1Value) {}
 
@@ -62,6 +67,7 @@ public:
     struct JacobianKernels {
         std::string subfieldTrial; ///< Name of subfield associated with trial function (row in Jacobian).
         std::string subfieldBasis; ///< Name of subfield associated with basis function (column in Jacobian).
+        EquationPart part; ///< Jacobian part (LHS or LHS lumped inverse).
         PetscPointJac j0; ///< J0 function.
         PetscPointJac j1; ///< J1 function.
         PetscPointJac j2; ///< J2 function.
@@ -70,6 +76,7 @@ public:
         JacobianKernels(void) :
             subfieldTrial(""),
             subfieldBasis(""),
+            part(LHS),
             j0(NULL),
             j1(NULL),
             j2(NULL),
@@ -78,12 +85,14 @@ public:
 
         JacobianKernels(const char* subfieldTrialValue,
                         const char* subfieldBasisValue,
+                        EquationPart partValue,
                         PetscPointJac j0Value,
                         PetscPointJac j1Value,
                         PetscPointJac j2Value,
                         PetscPointJac j3Value) :
             subfieldTrial(subfieldTrialValue),
             subfieldBasis(subfieldBasisValue),
+            part(partValue),
             j0(j0Value),
             j1(j1Value),
             j2(j2Value),
@@ -92,7 +101,7 @@ public:
 
     }; // JacobianKernels
 
-    /// Project kernels (point-wise functions) for updating state variables or computing derived fields.
+    /// Project kernels (pointwise functions) for updating state variables or computing derived fields.
     struct ProjectKernels {
         std::string subfield; ///< Name of subfield for function.
         PetscPointFunc f; ///< Point-wise function.
@@ -129,23 +138,30 @@ public:
      */
     const pylith::topology::Mesh& getPhysicsDomainMesh(void) const;
 
-    /** Set kernels for RHS residual.
+    /** Set kernels for residual.
      *
-     * @param kernels Array of kernerls for computing the RHS residual.
+     * @param[in] kernels Array of kernels for computing the residual.
+     * @param[in] solution Solution field.
      */
-    void setKernelsRHSResidual(const std::vector<ResidualKernels>& kernels);
+    void setKernelsResidual(const std::vector<ResidualKernels>& kernels,
+                            const pylith::topology::Field& solution);
 
-    /** Set kernels for LHS residual.
+    /** Set kernels for Jacobian.
      *
-     * @param kernels Array of kernerls for computing the LHS residual.
+     * @param[in] kernels Array of kernels for computing the Jacobian.
+     * @param[in] solution Solution field.
      */
-    void setKernelsLHSResidual(const std::vector<ResidualKernels>& kernels);
+    void setKernelsJacobian(const std::vector<JacobianKernels>& kernels,
+                            const pylith::topology::Field& solution);
 
-    /** Set kernels for LHS Jacobian.
+    /** Set kernels for Jacobian without finite-element integration.
      *
-     * @param kernels Array of kernerls for computing the LHS Jacobian.
+     * @param[in] kernelsJacobian Array of kernels for computing the Jacobian values without integration.
+     * @param[in] kernelsPrecond Array of kernels for computing the preconditioner values without integration.
+     * @param[in] solution Solution field.
      */
-    void setKernelsLHSJacobian(const std::vector<JacobianKernels>& kernels);
+    void setKernelsJacobian(const std::vector<pylith::feassemble::JacobianValues::JacobianKernel>& kernelsJacobian,
+                            const std::vector<pylith::feassemble::JacobianValues::JacobianKernel>& kernelsPrecond);
 
     /** Set kernels for updating state variables.
      *
@@ -165,63 +181,53 @@ public:
      */
     void initialize(const pylith::topology::Field& solution);
 
+    /** Set data needed for integrating faces on interior interfaces.
+     *
+     * @param[in] solution Solution field.
+     * @param[in] interfaceIntegrators Array of integrators for interfaces.
+     */
+    void setInterfaceData(const pylith::topology::Field* solution,
+                          const std::vector<pylith::feassemble::IntegratorInterface*> interfaceIntegrators) const;
+
+    /** Set auxiliary field values for current time.
+     *
+     * @param[in] t Current time.
+     */
+    void setState(const PylithReal t);
+
     /** Compute RHS residual for G(t,s).
      *
      * @param[out] residual Field for residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeRHSResidual(pylith::topology::Field* residual,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const pylith::topology::Field& solution);
+                            const pylith::feassemble::IntegrationData& integrationData);
 
     /** Compute LHS residual for F(t,s,\dot{s}).
      *
      * @param[out] residual Field for residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeLHSResidual(pylith::topology::Field* residual,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const pylith::topology::Field& solution,
-                            const pylith::topology::Field& solutionDot);
+                            const pylith::feassemble::IntegrationData& integrationData);
 
     /** Compute LHS Jacobian and preconditioner for F(t,s,\dot{s}) with implicit time-stepping.
      *
      * @param[out] jacobianMat PETSc Mat with Jacobian sparse matrix.
      * @param[out] precondMat PETSc Mat with Jacobian preconditioning sparse matrix.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeLHSJacobian(PetscMat jacobianMat,
                             PetscMat precondMat,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const PylithReal s_tshift,
-                            const pylith::topology::Field& solution,
-                            const pylith::topology::Field& solutionDot);
+                            const pylith::feassemble::IntegrationData& integrationData);
 
     /** Compute inverse of lumped LHS Jacobian for F(t,s,\dot{s}) with explicit time-stepping.
      *
      * @param[out] jacobianInv Inverse of lumped Jacobian as a field.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     void computeLHSJacobianLumpedInv(pylith::topology::Field* jacobianInv,
-                                     const PylithReal t,
-                                     const PylithReal dt,
-                                     const PylithReal s_tshift,
-                                     const pylith::topology::Field& solution);
+                                     const pylith::feassemble::IntegrationData& integrationData);
 
     // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////////////
 protected:
@@ -246,49 +252,8 @@ protected:
                               const PylithReal dt,
                               const pylith::topology::Field& solution);
 
-    /** Compute residual using current kernels.
-     *
-     * @param[out] residual Field for residual.
-     * @param[in] kernels Kernels for computing residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
-     */
-    void _computeResidual(pylith::topology::Field* residual,
-                          const std::vector<ResidualKernels>& kernels,
-                          const PylithReal t,
-                          const PylithReal dt,
-                          const pylith::topology::Field& solution,
-                          const pylith::topology::Field& solutionDot);
-
-    /** Compute Jacobian using current kernels.
-     *
-     * @param[out] jacobianMat PETSc Mat with Jacobian sparse matrix.
-     * @param[out] precondMat PETSc Mat with Jacobian preconditioning sparse matrix.
-     * @param[in] kernels Kernels for computing Jacobian.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
-     */
-    void _computeJacobian(PetscMat jacobianMat,
-                          PetscMat precondMat,
-                          const std::vector<JacobianKernels>& kernels,
-                          const PylithReal t,
-                          const PylithReal dt,
-                          const PylithReal s_tshift,
-                          const pylith::topology::Field& solution,
-                          const pylith::topology::Field& solutionDot);
-
     // PRIVATE MEMBERS /////////////////////////////////////////////////////////////////////////////////////////////////
 private:
-
-    std::vector<ResidualKernels> _kernelsRHSResidual; ///< kernels for RHS residual.
-    std::vector<ResidualKernels> _kernelsLHSResidual; ///< kernels for LHS residual.
-
-    std::vector<JacobianKernels> _kernelsLHSJacobian; /// > kernels for LHS Jacobian.
 
     std::vector<ProjectKernels> _kernelsUpdateStateVars; ///< kernels for updating state variables.
     std::vector<ProjectKernels> _kernelsDerivedField; ///< kernels for computing derived field.
@@ -296,6 +261,8 @@ private:
     pylith::topology::Mesh* _materialMesh; ///< Mesh associated with material.
 
     pylith::feassemble::UpdateStateVars* _updateState; ///< Data structure for layout needed to update state vars.
+    pylith::feassemble::JacobianValues* _jacobianValues; ///< Jacobian values without finite-element integration.
+    pylith::feassemble::DSLabelAccess* _dsLabel; ///< Information about integration (PETSc DS, Label, label value, etc).
 
     // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
 private:

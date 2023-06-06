@@ -4,13 +4,13 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis//
-// See COPYING for license information.
+// Copyright (c) 2010-2022 University of California, Davis//
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -54,7 +54,8 @@ pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
     err = DMGetDimension(dm, &dim);PYLITH_CHECK_ERROR(err);
     dim = (feinfo.dimension < 0) ? dim : feinfo.dimension;assert(dim > 0);
     FieldBase::Discretization feKey = FieldBase::Discretization(feinfo.basisOrder, feinfo.quadOrder, dim, numComponents,
-                                                                feinfo.cellBasis, feinfo.isBasisContinuous, feinfo.feSpace);
+                                                                feinfo.isFaultOnly, feinfo.cellBasis, feinfo.feSpace,
+                                                                feinfo.isBasisContinuous);
     std::map<FieldBase::Discretization, pylith::topology::FE>::const_iterator hasFE = pylith::topology::FieldOps::feStore.find(feKey);
 
     if (hasFE == pylith::topology::FieldOps::feStore.end()) {
@@ -66,7 +67,7 @@ pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
 
         // Create space
         PetscSpace space = NULL;
-        err = PetscSpaceCreate(PetscObjectComm((PetscObject) dm), &space);PYLITH_CHECK_ERROR(err);assert(space);
+        err = PetscSpaceCreate(PETSC_COMM_SELF, &space);PYLITH_CHECK_ERROR(err);assert(space);
         err = PetscSpaceSetType(space, feKey.feSpace == FieldBase::POLYNOMIAL_SPACE ?
                                 PETSCSPACEPOLYNOMIAL : PETSCSPACEPOINT);PYLITH_CHECK_ERROR(err);
         err = PetscSpaceSetNumComponents(space, numComponents);PYLITH_CHECK_ERROR(err);
@@ -80,8 +81,8 @@ pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
         // Create dual space
         PetscDualSpace dualspace = NULL;
         PetscDM dmCell = NULL;
-        err = PetscDualSpaceCreate(PetscObjectComm((PetscObject) dm), &dualspace);PYLITH_CHECK_ERROR(err);
-        err = PetscDualSpaceCreateReferenceCell(dualspace, dim, simplexBasis, &dmCell);PYLITH_CHECK_ERROR(err);
+        err = PetscDualSpaceCreate(PETSC_COMM_SELF, &dualspace);PYLITH_CHECK_ERROR(err);
+        err = DMPlexCreateReferenceCell(PETSC_COMM_SELF, DMPolytopeTypeSimpleShape(dim, simplexBasis), &dmCell);PYLITH_CHECK_ERROR(err);
         err = PetscDualSpaceSetDM(dualspace, dmCell);PYLITH_CHECK_ERROR(err);
         err = DMDestroy(&dmCell);PYLITH_CHECK_ERROR(err);
         err = PetscDualSpaceSetNumComponents(dualspace, numComponents);PYLITH_CHECK_ERROR(err);
@@ -92,7 +93,7 @@ pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
         err = PetscDualSpaceSetUp(dualspace);PYLITH_CHECK_ERROR(err);
 
         // Create element
-        err = PetscFECreate(PetscObjectComm((PetscObject) dm), &fe);PYLITH_CHECK_ERROR(err);
+        err = PetscFECreate(PETSC_COMM_SELF, &fe);PYLITH_CHECK_ERROR(err);
         err = PetscFESetType(fe, PETSCFEBASIC);PYLITH_CHECK_ERROR(err);
         err = PetscFESetBasisSpace(fe, space);PYLITH_CHECK_ERROR(err);
         err = PetscFESetDualSpace(fe, dualspace);PYLITH_CHECK_ERROR(err);
@@ -103,30 +104,25 @@ pylith::topology::FieldOps::createFE(const FieldBase::Discretization& feinfo,
 
         // Create quadrature
         PetscQuadrature quadrature = NULL;
-        const int basisNumComponents = 1;
-        const int numPoints = quadOrder + 1;
-        const PylithReal xRefMin = -1.0;
-        const PylithReal xRefMax = +1.0;
-        if (useTensor) {
-            err = PetscDTGaussTensorQuadrature(dim, basisNumComponents, numPoints, xRefMin, xRefMax, &quadrature);PYLITH_CHECK_ERROR(err);
-        } else {
-            err = PetscDTStroudConicalQuadrature(dim, basisNumComponents, numPoints, xRefMin, xRefMax, &quadrature);PYLITH_CHECK_ERROR(err);
+        PetscQuadrature faceQuadrature = NULL;
+        DMPolytopeType ct;
+        switch (dim) {
+          case 0: ct = DM_POLYTOPE_POINT;break;
+          case 1: ct = DM_POLYTOPE_SEGMENT;break;
+          case 2: ct = useTensor ? DM_POLYTOPE_QUADRILATERAL : DM_POLYTOPE_TRIANGLE;break;
+          case 3: ct = useTensor ? DM_POLYTOPE_HEXAHEDRON : DM_POLYTOPE_TETRAHEDRON;break;
+          default: throw std::logic_error("Cannot handle dimension");
         }
+        err = PetscDTCreateDefaultQuadrature(ct, quadOrder, &quadrature, &faceQuadrature);PYLITH_CHECK_ERROR(err);
         err = PetscFESetQuadrature(fe, quadrature);PYLITH_CHECK_ERROR(err);
         err = PetscQuadratureDestroy(&quadrature);PYLITH_CHECK_ERROR(err);
-        assert(feKey.feSpace == FieldBase::POLYNOMIAL_SPACE);
-        PetscQuadrature faceQuadrature = NULL;
-        if (useTensor) {
-            err = PetscDTGaussTensorQuadrature(dim-1, basisNumComponents, numPoints, xRefMin, xRefMax, &faceQuadrature);PYLITH_CHECK_ERROR(err);
-        } else {
-            err = PetscDTStroudConicalQuadrature(dim-1, basisNumComponents, numPoints, xRefMin, xRefMax, &faceQuadrature);PYLITH_CHECK_ERROR(err);
-        } // if/else
         err = PetscFESetFaceQuadrature(fe, faceQuadrature);PYLITH_CHECK_ERROR(err);
         err = PetscQuadratureDestroy(&faceQuadrature);PYLITH_CHECK_ERROR(err);
 
+        assert(feKey.feSpace == FieldBase::POLYNOMIAL_SPACE);
         pylith::topology::FieldOps::feStore.insert(std::pair<FieldBase::Discretization, pylith::topology::FE>(feKey, fe));
     } else {
-        throw std::logic_error("FielfOps::createFE() :TODO: Can't reuse PetscFE due to naming of fields, so make a deep copy of fe.");
+        throw std::logic_error("FieldOps::createFE() :TODO: Can't reuse PetscFE due to naming of fields, so make a deep copy of fe.");
         fe = hasFE->second._fe;
         err = PetscObjectReference((PetscObject) fe);PYLITH_CHECK_ERROR(err);
     }
@@ -152,10 +148,10 @@ pylith::topology::FieldOps::checkDiscretization(const pylith::topology::Field& t
     // Get quadrature order in target subfields.
     PetscInt quadOrder = -1;
     { // target subfields
-        const pylith::string_vector& subfieldNames = target.subfieldNames();
+        const pylith::string_vector& subfieldNames = target.getSubfieldNames();
         const size_t numSubfields = subfieldNames.size();
         for (size_t i = 0; i < numSubfields; ++i) {
-            const pylith::topology::Field::SubfieldInfo& sinfo = target.subfieldInfo(subfieldNames[i].c_str());
+            const pylith::topology::Field::SubfieldInfo& sinfo = target.getSubfieldInfo(subfieldNames[i].c_str());
             if (quadOrder > 0) {
                 if (quadOrder != sinfo.fe.quadOrder) {
                     std::ostringstream msg;
@@ -172,10 +168,10 @@ pylith::topology::FieldOps::checkDiscretization(const pylith::topology::Field& t
 
     // Check quadrature order in auxiliary subfields.
     { // auxiliary subfields
-        const pylith::string_vector& subfieldNames = auxiliary.subfieldNames();
+        const pylith::string_vector& subfieldNames = auxiliary.getSubfieldNames();
         const size_t numSubfields = subfieldNames.size();
         for (size_t i = 0; i < numSubfields; ++i) {
-            const pylith::topology::Field::SubfieldInfo& sinfo = auxiliary.subfieldInfo(subfieldNames[i].c_str());
+            const pylith::topology::Field::SubfieldInfo& sinfo = auxiliary.getSubfieldInfo(subfieldNames[i].c_str());
             if (quadOrder > 0) {
                 if (quadOrder != sinfo.fe.quadOrder) {
                     std::ostringstream msg;
@@ -199,12 +195,13 @@ pylith::topology::FieldOps::checkDiscretization(const pylith::topology::Field& t
 // Get names of subfields extending over entire domain.
 pylith::string_vector
 pylith::topology::FieldOps::getSubfieldNamesDomain(const pylith::topology::Field& field) {
-    const pylith::string_vector& subfieldNames = field.subfieldNames();
+    PYLITH_METHOD_BEGIN;
+    const pylith::string_vector& subfieldNames = field.getSubfieldNames();
 
     // Restrict fields to those defined over the entire domain
     // (as opposed to those defined over a subset like the fault_lagrange_multiplier).
     PetscDS fieldDS = NULL;
-    PetscErrorCode err = DMGetDS(field.dmMesh(), &fieldDS);PYLITH_CHECK_ERROR(err);
+    PetscErrorCode err = DMGetDS(field.getDM(), &fieldDS);PYLITH_CHECK_ERROR(err);
     PylithInt numFields = 0;
     err = PetscDSGetNumFields(fieldDS, &numFields);PYLITH_CHECK_ERROR(err);
     assert(numFields > 0);
@@ -233,20 +230,20 @@ pylith::topology::FieldOps::layoutsMatch(const pylith::topology::Field& fieldA,
     bool isMatch = true;
 
     // Check to see if fields have same chart and section sizes.
-    if (fieldA.chartSize() != fieldB.chartSize()) { isMatch = false; }
+    if (fieldA.getChartSize() != fieldB.getChartSize()) { isMatch = false; }
     if (fieldA.getStorageSize() != fieldB.getStorageSize()) { isMatch = false; }
 
     // Check to see if number of subfields match.
-    const pylith::string_vector& subfieldNamesA = fieldA.subfieldNames();
-    const pylith::string_vector& subfieldNamesB = fieldB.subfieldNames();
+    const pylith::string_vector& subfieldNamesA = fieldA.getSubfieldNames();
+    const pylith::string_vector& subfieldNamesB = fieldB.getSubfieldNames();
     if (subfieldNamesA.size() != subfieldNamesB.size()) { isMatch = false; }
 
     // Check to see if subfields have same number of components and discretizations.
     const size_t numSubfields = subfieldNamesA.size();
     if (isMatch) {
         for (size_t i = 0; i < numSubfields; ++i) {
-            const pylith::topology::Field::SubfieldInfo& infoA = fieldA.subfieldInfo(subfieldNamesA[i].c_str());
-            const pylith::topology::Field::SubfieldInfo& infoB = fieldB.subfieldInfo(subfieldNamesB[i].c_str());
+            const pylith::topology::Field::SubfieldInfo& infoA = fieldA.getSubfieldInfo(subfieldNamesA[i].c_str());
+            const pylith::topology::Field::SubfieldInfo& infoB = fieldB.getSubfieldInfo(subfieldNamesB[i].c_str());
 
             if (infoA.description.numComponents != infoB.description.numComponents) { isMatch = false; }
             if (infoA.fe.cellBasis != infoB.fe.cellBasis) { isMatch = false; }
@@ -257,7 +254,7 @@ pylith::topology::FieldOps::layoutsMatch(const pylith::topology::Field& fieldA,
     // Must match across all processors.
     PetscInt matchLocal = isMatch;
     PetscInt matchGlobal = 0;
-    PetscErrorCode err = MPI_Allreduce(&matchLocal, &matchGlobal, 1, MPIU_INT, MPI_LOR, fieldA.mesh().comm());PYLITH_CHECK_ERROR(err);
+    PetscErrorCode err = MPI_Allreduce(&matchLocal, &matchGlobal, 1, MPIU_INT, MPI_LOR, fieldA.getMesh().getComm());PYLITH_CHECK_ERROR(err);
     isMatch = matchGlobal == 1;
 
     // PYLITH_JOURNAL_DEBUG("layoutsMatch return value="<<isMatch<<".");

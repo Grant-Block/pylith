@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -38,7 +38,7 @@ public:
              * @param comm MPI communicator for mesh.
              */
             Mesh(const int dim,
-                 const MPI_Comm& comm=PETSC_COMM_WORLD);
+                 const MPI_Comm& comm = PETSC_COMM_WORLD);
 
             /// Default destructor
             ~Mesh(void);
@@ -46,6 +46,26 @@ public:
             /// Deallocate PETSc and local data structures.
             virtual
             void deallocate(void);
+
+            /** Create clone.
+             *
+             * @returns Clone of mesh.
+             */
+            Mesh* clone(void) const;
+
+            /** Get DMPlex mesh.
+             *
+             * @returns DMPlex mesh.
+             */
+            PetscDM getDM(void) const;
+
+            /** Set DMPlex mesh.
+             *
+             * @param DMPlex mesh.
+             * @param label Label for mesh.
+             */
+            void setDM(PetscDM dm,
+                       const char* label="domain");
 
             /** Set coordinate system.
              *
@@ -59,47 +79,23 @@ public:
              */
             const spatialdata::geocoords::CoordSys* getCoordSys(void) const;
 
-            /** Set debug flag.
-             *
-             * @param value Turn on debugging if true.
-             */
-            void debug(const bool value);
-
-            /** Get debug flag.
-             *
-             * @param Get debugging flag.
-             */
-            bool debug(void) const;
-
             /** Get dimension of mesh.
              *
              * @returns Dimension of mesh.
              */
-            int dimension(void) const;
-
-            /** Get the number of vertices per cell
-             *
-             * @returns Number of vertices per cell.
-             */
-            int numCorners(void) const;
-
-            /** Get number of vertices in mesh.
-             *
-             * @returns Number of vertices in mesh.
-             */
-            int numVertices(void) const;
-
-            /** Get number of cells in mesh.
-             *
-             * @returns Number of cells in mesh.
-             */
-            int numCells(void) const;
+            int getDimension(void) const;
 
             /** Get MPI communicator associated with mesh.
              *
              * @returns MPI communicator.
              */
-            const MPI_Comm comm(void) const;
+            const MPI_Comm getComm(void) const;
+
+            /** Get MPI rank.
+             *
+             * @returns MPI rank.
+             */
+            int getCommRank(void) const;
 
             /** View mesh.
              *

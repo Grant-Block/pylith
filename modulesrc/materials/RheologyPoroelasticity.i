@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -46,21 +46,6 @@ public:
       /// Add rheology subfields to auxiliary field.
       virtual
       void addAuxiliarySubfields(void) = 0;
-
-      // ============================ Either Side ====================================
-      // ---------------------------------------------------------------------------------------------------------------------
-      // Get stress kernel for RHS residual, G(t,s).
-      virtual
-      PetscPointFunc getKernelResidualStress(const spatialdata::geocoords::CoordSys* coordsys, const bool _useInertia) const = 0;
-
-      /** Get pressure kernel for RHS residual, G(t,s).
-       *
-       * @param[in] coordsys Coordinate system.
-       *
-       * @return RHS residual kernel for Darcy velocity.
-       */
-       virtual
-      PetscPointFunc getKernelDarcy(const spatialdata::geocoords::CoordSys* coordsys, const bool _gravityField, const bool _useInertia) const = 0;
 
       // ============================= RHS ==================================== //
 
@@ -107,7 +92,8 @@ public:
     */
     virtual
     PetscPointFunc getKernelf1p_implicit(const spatialdata::geocoords::CoordSys* coordsys,
-                                           const bool _gravityField) const = 0;
+                                         const bool _useBodyForce,    
+                                         const bool _gravityField) const = 0;
 
     // ---------------------------------------------------------------------------------------------------------------------
     // Get poroelastic constants kernel for LHS Jacobian
@@ -139,6 +125,14 @@ public:
     virtual
     PetscPointJac getKernelJf0pe(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
 
+    // ---------------------------------------------------------------------------------------------------------------------
+    virtual
+    PetscPointJac getKernelJf0ppdot(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    virtual
+    PetscPointJac getKernelJf0pedot(const spatialdata::geocoords::CoordSys* coordsys) const = 0;
+
       // ============================ DERIVED FIELDS ========================== //
 
       /** Get stress kernel for derived field.
@@ -156,8 +150,9 @@ public:
        * @param[in] coordsys Coordinate system.
        */
       virtual
-      void addKernelsUpdateStateVars(std::vector<pylith::feassemble::IntegratorDomain::ProjectKernels>* kernels,
-                                     const spatialdata::geocoords::CoordSys* coordsys) const;
+      void addKernelsUpdateStateVarsImplicit(std::vector<pylith::feassemble::IntegratorDomain::ProjectKernels>* kernels,
+                                     const spatialdata::geocoords::CoordSys* coordsys,
+                                     const bool _useStateVars) const;
 
       /** Update kernel constants.
        *

@@ -2,31 +2,24 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2015 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/problems/Problem.py
-#
-# @brief Python abstract base class for crustal dynamics problems.
-#
-# Factory: problem.
 
 from pylith.utils.PetscComponent import PetscComponent
 from .problems import Problem as ModuleProblem
 from .problems import Physics
 from pylith.utils.NullComponent import NullComponent
 from .ProblemDefaults import ProblemDefaults
+from pylith.utils.PetscDefaults import PetscDefaults
 
-
-# Factories for items in facility arrays
 
 def materialFactory(name):
     """Factory for material items.
@@ -61,9 +54,14 @@ def observerFactory(name):
 
 
 class Problem(PetscComponent, ModuleProblem):
-    """Python abstract base class for crustal dynamics problems.
+    """
+    Abstract base class for a problem.
 
-    FACTORY: problem
+    The default formulation, solution field, and scales for nondimensionalization are appropriate for solving the quasi-static elasticity equation.
+
+    By default, we use the nonlinear solver.
+    This facilitates verifying that the residual and Jacobian are consistent.
+    If the nonlinear (SNES) solver requires multiple iterations to converge for these linear problems, then we know there is an error in the problem setup.
     """
 
     import pythia.pyre.inventory
@@ -76,9 +74,12 @@ class Problem(PetscComponent, ModuleProblem):
                                      validator=pythia.pyre.inventory.choice(["quasistatic", "dynamic", "dynamic_imex"]))
     formulation.meta['tip'] = "Formulation for equations."
 
-    solverChoice = pythia.pyre.inventory.str("solver", default="linear",
+    solverChoice = pythia.pyre.inventory.str("solver", default="nonlinear",
                                       validator=pythia.pyre.inventory.choice(["linear", "nonlinear"]))
     solverChoice.meta['tip'] = "Type of solver to use ['linear', 'nonlinear']."
+
+    petscDefaults = pythia.pyre.inventory.facility("petsc_defaults", family="petsc_defaults", factory=PetscDefaults)
+    petscDefaults.meta['tip'] = "Flags controlling which default PETSc options to use."
 
     from .Solution import Solution
     solution = pythia.pyre.inventory.facility("solution", family="solution", factory=Solution)
@@ -106,21 +107,17 @@ class Problem(PetscComponent, ModuleProblem):
     gravityField = pythia.pyre.inventory.facility("gravity_field", family="spatial_database", factory=NullComponent)
     gravityField.meta['tip'] = "Database used for gravity field."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
     def __init__(self, name="problem"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="problem")
         self.mesh = None
-        return
 
     def preinitialize(self, mesh):
         """Do minimal initialization.
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log("Performing minimal initialization before verifying configuration.")
 
         self._createModuleObj()
@@ -143,6 +140,7 @@ class Problem(PetscComponent, ModuleProblem):
             ModuleProblem.setSolverType(self, ModuleProblem.NONLINEAR)
         else:
             raise ValueError("Unknown solver choice '%s'." % self.solverChoice)
+        ModuleProblem.setPetscDefaults(self, self.petscDefaults.flags());
         ModuleProblem.setNormalizer(self, self.normalizer)
         if not isinstance(self.gravityField, NullComponent):
             ModuleProblem.setGravityField(self, self.gravityField)
@@ -172,52 +170,43 @@ class Problem(PetscComponent, ModuleProblem):
             ModuleProblem.registerObserver(self, observer)
 
         ModuleProblem.preinitialize(self, mesh)
-        return
 
     def verifyConfiguration(self):
         """Verify compatibility of configuration.
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log("Verifying compatibility of problem configuration.")
 
         ModuleProblem.verifyConfiguration(self)
-
-        self._printInfo()
-        return
+        if mpi_is_root():
+            self._printInfo()
 
     def initialize(self):
         """Initialize integrators and constraints.
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
-            self._info.log("Initializing {} problem.".format(self.formulation))
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
+            self._info.log(f"Initializing {self.name} problem with {self.formulation} formulation.")
 
         ModuleProblem.initialize(self)
-        return
 
     def run(self, app):
         """Solve the problem.
         """
         raise NotImplementedError("run() not implemented.")
-        return
 
     def finalize(self):
         """Cleanup after running problem.
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log("Finalizing problem.")
-        return
 
     def checkpoint(self):
         """Save problem state for restart.
         """
         raise NotImplementedError("checkpoint() not implemented.")
-        return
 
     # PRIVATE METHODS ////////////////////////////////////////////////////
 
@@ -233,7 +222,6 @@ class Problem(PetscComponent, ModuleProblem):
             "    Temperature scale: {}".format(self.normalizer.getTemperatureScale()),
         )
         self._info.log("\n".join(msg))
-        return
 
     def _setupLogging(self):
         """Setup event logging.
@@ -245,9 +233,7 @@ class Problem(PetscComponent, ModuleProblem):
         logger = EventLogger()
         logger.setClassName("Problem")
         logger.initialize()
-
         self._eventLogger = logger
-        return
 
 
 # End of file

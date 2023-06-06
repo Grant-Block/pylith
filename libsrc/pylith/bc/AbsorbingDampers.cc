@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -30,6 +30,7 @@
 #include "pylith/topology/FieldOps.hh" // USES FieldOps
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
 
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_COMPONENT_*
 
 #include <strings.h> // USES strcasecmp()
@@ -55,9 +56,9 @@ public:
              * @param[in] solution Solution field.
              */
             static
-            void setKernelsRHSResidual(pylith::feassemble::IntegratorBoundary* integrator,
-                                       const pylith::bc::AbsorbingDampers& bc,
-                                       const pylith::topology::Field& solution);
+            void setKernelsResidual(pylith::feassemble::IntegratorBoundary* integrator,
+                                    const pylith::bc::AbsorbingDampers& bc,
+                                    const pylith::topology::Field& solution);
 
             static const char* pyreComponent;
         };
@@ -69,8 +70,7 @@ public:
 // ---------------------------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::bc::AbsorbingDampers::AbsorbingDampers(void) :
-    _auxiliaryFactory(new pylith::bc::AbsorbingDampersAuxiliaryFactory),
-    _boundaryLabel("") {
+    _auxiliaryFactory(new pylith::bc::AbsorbingDampersAuxiliaryFactory) {
     PyreComponent::setName(_AbsorbingDampers::pyreComponent);
 
     _subfieldName = "velocity";
@@ -107,7 +107,7 @@ pylith::bc::AbsorbingDampers::verifyConfiguration(const pylith::topology::Field&
 
     BoundaryCondition::verifyConfiguration(solution);
 
-    const pylith::topology::Field::SubfieldInfo& info = solution.subfieldInfo(_subfieldName.c_str());
+    const pylith::topology::Field::SubfieldInfo& info = solution.getSubfieldInfo(_subfieldName.c_str());
     if (pylith::topology::Field::VECTOR != info.description.vectorFieldType) {
         std::ostringstream msg;
         msg << "Absorbing boundary condition cannot be applied to non-vector field '"<< _subfieldName << "' in solution.";
@@ -126,9 +126,11 @@ pylith::bc::AbsorbingDampers::createIntegrator(const pylith::topology::Field& so
     PYLITH_COMPONENT_DEBUG("createIntegrator(solution="<<solution.getLabel()<<")");
 
     pylith::feassemble::IntegratorBoundary* integrator = new pylith::feassemble::IntegratorBoundary(this);assert(integrator);
-    integrator->setMarkerLabel(getMarkerLabel());
+    integrator->setSubfieldName(getSubfieldName());
+    integrator->setLabelName(getLabelName());
+    integrator->setLabelValue(getLabelValue());
 
-    _AbsorbingDampers::setKernelsRHSResidual(integrator, *this, solution);
+    _AbsorbingDampers::setKernelsResidual(integrator, *this, solution);
 
     PYLITH_METHOD_RETURN(integrator);
 } // createIntegrator
@@ -136,10 +138,14 @@ pylith::bc::AbsorbingDampers::createIntegrator(const pylith::topology::Field& so
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Create constraint and set kernels.
-pylith::feassemble::Constraint*
-pylith::bc::AbsorbingDampers::createConstraint(const pylith::topology::Field& solution) {
-    return NULL;
-} // createConstraint
+std::vector<pylith::feassemble::Constraint*>
+pylith::bc::AbsorbingDampers::createConstraints(const pylith::topology::Field& solution) {
+    PYLITH_METHOD_BEGIN;
+    PYLITH_COMPONENT_DEBUG("createConstraints(solution="<<solution.getLabel()<<") empty method");
+    std::vector<pylith::feassemble::Constraint*> constraintArray;
+
+    PYLITH_METHOD_RETURN(constraintArray);
+} // createConstraints
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -155,7 +161,7 @@ pylith::bc::AbsorbingDampers::createAuxiliaryField(const pylith::topology::Field
 
     assert(_auxiliaryFactory);
     assert(_normalizer);
-    _auxiliaryFactory->initialize(auxiliaryField, *_normalizer, domainMesh.dimension());
+    _auxiliaryFactory->initialize(auxiliaryField, *_normalizer, domainMesh.getDimension());
 
     // :ATTENTION: The order for adding subfields must match the order of the auxiliary fields in the FE kernels.
 
@@ -222,11 +228,11 @@ pylith::bc::AbsorbingDampers::_updateKernelConstants(const PylithReal dt) {
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Set kernels for RHS residual G(t,s).
+// Set kernels for residual.
 void
-pylith::bc::_AbsorbingDampers::setKernelsRHSResidual(pylith::feassemble::IntegratorBoundary* integrator,
-                                                     const pylith::bc::AbsorbingDampers& bc,
-                                                     const topology::Field& solution) {
+pylith::bc::_AbsorbingDampers::setKernelsResidual(pylith::feassemble::IntegratorBoundary* integrator,
+                                                  const pylith::bc::AbsorbingDampers& bc,
+                                                  const pylith::topology::Field& solution) {
     PYLITH_METHOD_BEGIN;
     pythia::journal::debug_t debug(_AbsorbingDampers::pyreComponent);
     debug << pythia::journal::at(__HERE__)
@@ -237,10 +243,10 @@ pylith::bc::_AbsorbingDampers::setKernelsRHSResidual(pylith::feassemble::Integra
     PetscBdPointFunc g1 = NULL;
 
     std::vector<ResidualKernels> kernels(1);
-    kernels[0] = ResidualKernels(bc.getSubfieldName(), g0, g1);
+    kernels[0] = ResidualKernels(bc.getSubfieldName(), pylith::feassemble::Integrator::RHS, g0, g1);
 
     assert(integrator);
-    integrator->setKernelsRHSResidual(kernels);
+    integrator->setKernelsResidual(kernels, solution);
 
     PYLITH_METHOD_END;
 } // _setKernelsRHSResidual

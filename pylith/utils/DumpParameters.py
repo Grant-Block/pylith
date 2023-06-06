@@ -2,20 +2,16 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/utils/DumpParameters.py
-#
-# @brief Python DumpParameters object for dumping PyLith parameter information to a file.
 
 from pythia.pyre.components.Component import Component
 
@@ -23,18 +19,15 @@ from .PropertyList import PropertyList
 
 
 class DumpParameters(Component):
-    """Python DumpParameters object for dumping PyLith parameter information to a file.
     """
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    Abstract base class for dumping PyLith parameter information to a file.
+    """
 
     def __init__(self, name="dumpparameters"):
         """Constructor.
         """
-        Component.__init__(self, name="dumpparamters",
-                           facility="dumpparameters")
+        Component.__init__(self, name="dumpparamters", facility="dumpparameters")
         self.info = None
-        return
 
     def preinitialize(self):
         """Do minimal initialization."""
@@ -60,9 +53,6 @@ class DumpParameters(Component):
             "properties": properties,
             "components": components,
         }
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
 
     def _getPropertiesComponents(self, obj):
         """Get objects properties and components.
@@ -139,12 +129,7 @@ class DumpParameters(Component):
         relpath = os.path.dirname(filename)
 
         if len(relpath) > 0 and not os.path.exists(relpath):
-            # Only create directory on proc 0
-            from pylith.mpi.Communicator import mpi_comm_world
-            comm = mpi_comm_world()
-            if 0 == comm.rank:
-                os.makedirs(relpath)
-        return
+            os.makedirs(relpath)
 
 
 # End of file

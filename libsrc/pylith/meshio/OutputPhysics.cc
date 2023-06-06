@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -29,6 +29,7 @@
 #include "pylith/topology/Field.hh" // USES Field
 #include "pylith/topology/FieldOps.hh" // USES FieldOps
 
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_COMPONENT_*
 
 #include <iostream> // USES std::cout
@@ -217,7 +218,7 @@ pylith::meshio::OutputPhysics::_writeInfo(void) {
     _open(domainMesh, isInfo);
     _openDataStep(0.0, domainMesh);
 
-    PetscVec auxiliaryVector = auxiliaryField->outputVector();
+    PetscVec auxiliaryVector = auxiliaryField->getOutputVector();
     auxiliaryField->scatterLocalToOutput();
 
     const size_t numInfoFields = infoNames.size();
@@ -326,24 +327,29 @@ pylith::meshio::OutputPhysics::_writeDataStep(const PylithReal t,
     _openDataStep(t, domainMesh);
 
     if (auxiliaryField) { auxiliaryField->scatterLocalToOutput(); }
-    PetscVec auxiliaryVector = (auxiliaryField) ? auxiliaryField->outputVector() : NULL;
+    PetscVec auxiliaryVector = (auxiliaryField) ? auxiliaryField->getOutputVector() : NULL;
 
     if (derivedField) { derivedField->scatterLocalToOutput(); }
-    PetscVec derivedVector = (derivedField) ? derivedField->outputVector() : NULL;
+    PetscVec derivedVector = (derivedField) ? derivedField->getOutputVector() : NULL;
 
-    PetscVec solutionVector = solution.outputVector();assert(solutionVector);
+    PetscVec solutionVector = solution.getOutputVector();assert(solutionVector);
+
+    const char* labelName = _physics->getPhysicsLabelName();
+    const int labelValue = _physics->getPhysicsLabelValue();
 
     const size_t numDataFields = dataNames.size();
     for (size_t i = 0; i < numDataFields; i++) {
         OutputSubfield* subfield = NULL;
         if (solution.hasSubfield(dataNames[i].c_str())) {
             subfield = OutputObserver::_getSubfield(solution, domainMesh, dataNames[i].c_str());assert(subfield);
-            subfield->project(solutionVector);
+            subfield->setLabel(labelName, labelValue);
+            subfield->projectWithLabel(solutionVector);
         } else if (auxiliaryField && auxiliaryField->hasSubfield(dataNames[i].c_str())) {
             subfield = OutputObserver::_getSubfield(*auxiliaryField, domainMesh, dataNames[i].c_str());assert(subfield);
             subfield->project(auxiliaryVector);
         } else if (derivedField && derivedField->hasSubfield(dataNames[i].c_str())) {
             subfield = OutputObserver::_getSubfield(*derivedField, domainMesh, dataNames[i].c_str());assert(subfield);
+            subfield->setLabel(labelName, labelValue);
             subfield->project(derivedVector);
         } else {
             std::ostringstream msg;
@@ -352,7 +358,7 @@ pylith::meshio::OutputPhysics::_writeDataStep(const PylithReal t,
             throw std::runtime_error(msg.str());
         } // if/else
 
-        OutputObserver::_appendField(0.0, *subfield);
+        OutputObserver::_appendField(t, *subfield);
     } // for
     _closeDataStep();
 
@@ -367,7 +373,7 @@ pylith::meshio::OutputPhysics::_expandInfoFieldNames(const pylith::topology::Fie
     PYLITH_METHOD_BEGIN;
 
     if (auxField && (1 == _infoFieldNames.size()) && (std::string("all") == _infoFieldNames[0])) {
-        PYLITH_METHOD_RETURN(auxField->subfieldNames());
+        PYLITH_METHOD_RETURN(auxField->getSubfieldNames());
     } // if
 
     PYLITH_METHOD_RETURN(_infoFieldNames);
@@ -386,7 +392,7 @@ pylith::meshio::OutputPhysics::_expandDataFieldNames(const pylith::topology::Fie
         pylith::string_vector dataNames = pylith::topology::FieldOps::getSubfieldNamesDomain(solution);
 
         if (derivedField) {
-            const pylith::string_vector& derivedSubfields = derivedField->subfieldNames();
+            const pylith::string_vector& derivedSubfields = derivedField->getSubfieldNames();
             const size_t origSize = dataNames.size();
             const size_t numAdd = derivedSubfields.size();
             dataNames.resize(origSize + numAdd);

@@ -2,54 +2,33 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/topology/MeshGenerator.py
-#
-# @brief Python abstract base class for mesh generator.
-#
-# Factory: mesh_generator.
 
 from pylith.utils.PetscComponent import PetscComponent
 
 
 class MeshGenerator(PetscComponent):
-    """Python abstract base class for mesh generator.
-
-    FACTORY: mesh_generator
     """
-
-    import pythia.pyre.inventory
-
-    debug = pythia.pyre.inventory.bool("debug", default=False)
-    debug.meta['tip'] = "Debugging flag for mesh."
-
-    interpolate = pythia.pyre.inventory.bool("interpolate", default=True)
-    interpolate.meta['tip'] = "Build intermediate mesh topology elements"
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    Abstract base class for mesh generator.
+    """
 
     def __init__(self, name="meshgenerator"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="meshgenerator")
-        self.debug = False
-        self.interpolate = True
-        return
 
     def preinitialize(self, problem):
         """Do minimal initialization.
         """
-        return
 
     def create(self, normalizer, faults=None):
         """Generate a Mesh.
@@ -57,16 +36,12 @@ class MeshGenerator(PetscComponent):
 
         # Need to nondimensionalize coordinates.
 
-        raise NotImplementedError("MeshGenerator.create() not implemented.")
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
+        raise NotImplementedError("MeshGenerator.create() not implemented.")    
 
     def _configure(self):
         """Set members based using inventory.
         """
         PetscComponent._configure(self)
-        return
 
     def _adjustTopology(self, mesh, interfaces, problem):
         """Adjust topology for interface implementation.
@@ -74,18 +49,22 @@ class MeshGenerator(PetscComponent):
         logEvent = "%sadjTopo" % self._loggingPrefix
         self._eventLogger.eventBegin(logEvent)
 
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
+        from pylith.mpi.Communicator import mpi_is_root
 
         if not interfaces is None:
+            cohesiveLabelValue = 100
+            for material in problem.materials.components():
+                labelValue = material.labelValue
+                cohesiveLabelValue = max(cohesiveLabelValue, labelValue+1)
             for interface in interfaces:
-                if 0 == comm.rank:
-                    self._info.log("Adjusting topology for fault '%s'." % interface.label)
+                if mpi_is_root():
+                    self._info.log("Adjusting topology for fault '%s'." % interface.labelName)
                 interface.preinitialize(problem)
+                interface.setCohesiveLabelValue(cohesiveLabelValue)
                 interface.adjustTopology(mesh)
+                cohesiveLabelValue += 1
 
         self._eventLogger.eventEnd(logEvent)
-        return
 
     def _setupLogging(self):
         """Setup event logging.
@@ -104,7 +83,6 @@ class MeshGenerator(PetscComponent):
             logger.registerEvent("%s%s" % (self._loggingPrefix, event))
 
         self._eventLogger = logger
-        return
 
 
 # End of file

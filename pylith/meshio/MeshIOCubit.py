@@ -2,14 +2,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -37,10 +37,23 @@ def validateFilename(value):
 
 
 class MeshIOCubit(MeshIOObj, ModuleMeshIOCubit):
-    """Python object for reading/writing finite-element mesh from Cubit.
-
-    FACTORY: mesh_io
     """
+    Reader for finite-element meshes from Exodus II files (usually from Cubit).
+
+    :::{warning}
+    The coordinate system associated with the mesh must be a Cartesian coordinate system, such as a generic Cartesian coordinate system or a geographic projection.
+    :::
+
+    Implements `MeshIOObj`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.mesh_generator.reader]
+            filename = mesh_quad.exo
+            use_nodeset_names = True
+            coordsys.space_dim = 2
+        """
+    }
 
     import pythia.pyre.inventory
 
@@ -51,39 +64,29 @@ class MeshIOCubit(MeshIOObj, ModuleMeshIOCubit):
     useNames.meta['tip'] = "Use nodeset names instead of ids."
 
     from spatialdata.geocoords.CSCart import CSCart
-    coordsys = pythia.pyre.inventory.facility("coordsys", family="coordsys",
-                                       factory=CSCart)
+    coordsys = pythia.pyre.inventory.facility("coordsys", family="coordsys", factory=CSCart)
     coordsys.meta['tip'] = "Coordinate system associated with mesh."
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
 
     def __init__(self, name="meshiocubit"):
         """Constructor.
         """
         MeshIOObj.__init__(self, name)
-        return
 
     def preinitialize(self):
         """Do minimal initialization."""
         MeshIOObj.preinitialize(self)
-
-        ModuleMeshIOCubit.filename(self, self.inventory.filename)
-        ModuleMeshIOCubit.useNodesetNames(self, self.inventory.useNames)
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
+        ModuleMeshIOCubit.setFilename(self, self.filename)
+        ModuleMeshIOCubit.setUseNodesetNames(self, self.useNames)
 
     def _configure(self):
         """Set members based using inventory.
         """
         MeshIOObj._configure(self)
-        return
 
     def _createModuleObj(self):
         """Create C++ MeshIOCubit object.
         """
         ModuleMeshIOCubit.__init__(self)
-        return
 
 
 # FACTORIES ////////////////////////////////////////////////////////////

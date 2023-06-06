@@ -2,31 +2,24 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/topology/ReverseCuthillMcKee.py
-#
-# @brief Python interface to PETSc reverse Cuthill-McKee reordering
-# of mesh cells and vertices.
 
 from .topology import ReverseCuthillMcKee as ModuleReverseCuthillMcKee
 
 
 class ReverseCuthillMcKee(ModuleReverseCuthillMcKee):
-    """Python interface to PETSc reverse Cuthill-McKee reordering of mesh
-    cells and vertices.
     """
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    Interface to PETSc reverse Cuthill-McKee reordering of mesh cells and vertices.
+    """
 
     def __init__(self):
         """Constructor.
@@ -37,7 +30,6 @@ class ReverseCuthillMcKee(ModuleReverseCuthillMcKee):
         """Set communicator.
         """
         ModuleReverseCuthillMcKee.reorder(mesh)
-        return
 
 
 # End of file

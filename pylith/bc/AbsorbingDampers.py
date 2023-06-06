@@ -2,32 +2,43 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/bc/AbsorbingDampers.py
-#
-# @brief Python object for managing absorbing dampers boundary condition.
-#
-# Factory: boundary_condition
 
 from pylith.bc.BoundaryCondition import BoundaryCondition
 from .bc import AbsorbingDampers as ModuleAbsorbingDampers
 
 
 class AbsorbingDampers(BoundaryCondition, ModuleAbsorbingDampers):
-    """Python object for managing absorbing dampers condition.
-
-    FACTORY: boundary_condition
     """
+    Absorbing dampers boundary condition.
+
+    Implements `BoundaryCondition`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [bc]
+            label = boundary_xpos
+            field = velocity
+
+            db_auxiliary_field = spatialdata.spatialdb.UniformDB
+            db_auxiliary_field.description = Material properties for absorbing boundary
+            db_auxiliary_field.values = [density, vs, vp]
+            db_auxiliary_field.data = [2500*kg/m**3, 1.0*km/s, 1.732*km/s]
+
+            auxiliary_subfields.density.basis_order = 0
+            auxiliary_subfields.vp.basis_order = 0
+            auxiliary_subfields.vs.basis_order = 0            
+            """,
+    }
 
     # PUBLIC METHODS /////////////////////////////////////////////////////
 
@@ -39,8 +50,7 @@ class AbsorbingDampers(BoundaryCondition, ModuleAbsorbingDampers):
 
     def _defaults(self):
         from .AuxSubfieldsAbsorbingDampers import AuxSubfieldsAbsorbingDampers
-        self.auxiliarySubfields = AuxSubfieldsAbsorbingDampers(
-            "auxiliary_subfields")
+        self.auxiliarySubfields = AuxSubfieldsAbsorbingDampers("auxiliary_subfields")
 
     def preinitialize(self, problem):
         """Do pre-initialization setup.

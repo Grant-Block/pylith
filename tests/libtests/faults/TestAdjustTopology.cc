@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -20,7 +20,7 @@
 
 #include "TestAdjustTopology.hh"
 
-#include "pylith/testing/FaultCohesiveStub.hh" // USES FaultsCohesiveStub
+#include "tests/src/FaultCohesiveStub.hh" // USES FaultsCohesiveStub
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/MeshOps.hh" // USES MeshOps::nondimensionalize()
@@ -76,10 +76,13 @@ pylith::faults::TestAdjustTopology::testAdjustTopology(void) {
         CPPUNIT_ASSERT(_data->faultSurfaceLabels);
         CPPUNIT_ASSERT(_data->faultEdgeLabels);
 
-        fault.setInterfaceId(_data->interfaceIds[i]);
-        fault.setSurfaceMarkerLabel(_data->faultSurfaceLabels[i]);
+        fault.setCohesiveLabelName(pylith::topology::Mesh::cells_label_name);
+        fault.setCohesiveLabelValue(_data->interfaceIds[i]);
+        fault.setSurfaceLabelName(_data->faultSurfaceLabels[i]);
+        fault.setSurfaceLabelValue(1);
         if (_data->faultEdgeLabels[i]) {
-            fault.setBuriedEdgesMarkerLabel(_data->faultEdgeLabels[i]);
+            fault.setBuriedEdgesLabelName(_data->faultEdgeLabels[i]);
+            fault.setBuriedEdgesLabelValue(1);
         } // if
         if (!_data->failureExpected) {
             fault.adjustTopology(_mesh);
@@ -91,12 +94,12 @@ pylith::faults::TestAdjustTopology::testAdjustTopology(void) {
 
 #if 0 // DEBUGGING
     PetscViewerPushFormat(PETSC_VIEWER_STDOUT_WORLD, PETSC_VIEWER_ASCII_INFO_DETAIL);
-    DMView(_mesh->dmMesh(), PETSC_VIEWER_STDOUT_WORLD);
+    DMView(_mesh->getDM(), PETSC_VIEWER_STDOUT_WORLD);
     PetscViewerPopFormat(PETSC_VIEWER_STDOUT_WORLD);
 #endif
 
-    CPPUNIT_ASSERT_EQUAL(_data->cellDim, size_t(_mesh->dimension()));
-    PetscDM dmMesh = _mesh->dmMesh();CPPUNIT_ASSERT(dmMesh);
+    CPPUNIT_ASSERT_EQUAL(_data->cellDim, size_t(_mesh->getDimension()));
+    PetscDM dmMesh = _mesh->getDM();CPPUNIT_ASSERT(dmMesh);
 
     // Check vertices
     topology::Stratum verticesStratum(dmMesh, topology::Stratum::DEPTH, 0);
@@ -127,7 +130,7 @@ pylith::faults::TestAdjustTopology::testAdjustTopology(void) {
     // check materials
     CPPUNIT_ASSERT(_data->materialIds);
     PetscDMLabel labelMaterials = NULL;
-    const char* const cellsLabelName = pylith::topology::Mesh::getCellsLabelName();
+    const char* const cellsLabelName = pylith::topology::Mesh::cells_label_name;
     err = DMGetLabel(dmMesh, cellsLabelName, &labelMaterials);PYLITH_CHECK_ERROR(err);
     CPPUNIT_ASSERT(labelMaterials);
     const PetscInt idDefault = -999;
@@ -157,7 +160,7 @@ pylith::faults::TestAdjustTopology::testAdjustTopology(void) {
         const char *labelName = NULL;
         std::set<std::string> ignoreLabels;
         ignoreLabels.insert("depth");
-        ignoreLabels.insert("material-id");
+        ignoreLabels.insert(pylith::topology::Mesh::cells_label_name);
         ignoreLabels.insert("vtk");
         ignoreLabels.insert("ghost");
         ignoreLabels.insert("dim");
@@ -202,10 +205,10 @@ pylith::faults::TestAdjustTopology::_initialize(void) {
     delete _mesh;_mesh = new pylith::topology::Mesh;CPPUNIT_ASSERT(_mesh);
 
     pylith::meshio::MeshIOAscii iohandler;
-    iohandler.filename(_data->filename);
+    iohandler.setFilename(_data->filename);
     iohandler.read(_mesh);
-    CPPUNIT_ASSERT(_mesh->numCells() > 0);
-    CPPUNIT_ASSERT(_mesh->numVertices() > 0);
+    CPPUNIT_ASSERT(pylith::topology::MeshOps::getNumCells(*_mesh) > 0);
+    CPPUNIT_ASSERT(pylith::topology::MeshOps::getNumVertices(*_mesh) > 0);
 
     PYLITH_METHOD_END;
 } // _initialize

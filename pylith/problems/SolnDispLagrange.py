@@ -2,14 +2,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -23,11 +23,15 @@ from .Solution import Solution as SolutionBase
 
 
 class SolnDispLagrange(PetscComponent):
-    """Python subfields container with displacement and fault Lagrange multiplier subfields.
-
-    IMPORTANT: Use the Solution class (below) to set this object as the default facilities array for the solution
-    subfields.
     """
+    Container for solution subfields with displacement and fault Lagrange multiplier subfields.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.problem]
+            solution = pylith.problems.SolnDispLagrange
+        """
+    }
 
     import pythia.pyre.inventory
 
@@ -60,7 +64,8 @@ class SolnDispLagrange(PetscComponent):
 
 
 class Solution(SolutionBase):
-    """Python solution field with displacement and Lagrange multiplier subfields.
+    """
+    Solution field with displacement and Lagrange multiplier subfields.
     """
 
     import pythia.pyre.inventory

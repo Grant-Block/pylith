@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -29,6 +29,7 @@
 #include "pylith/topology/FieldOps.hh" // USES FieldOps
 
 #include "pylith/utils/constdefs.h" // USES PYLITH_MAXSCALAR
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_COMPONENT_*
 
 #include <iostream> // USES std::cout
@@ -40,8 +41,7 @@ pylith::meshio::OutputObserver::OutputObserver(void) :
     _timeScale(1.0),
     _writer(NULL),
     _trigger(NULL),
-    _outputBasisOrder(1)
-{}
+    _outputBasisOrder(1) {}
 
 
 // ------------------------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ pylith::meshio::OutputObserver::_getSubfield(const pylith::topology::Field& fiel
     PYLITH_METHOD_BEGIN;
     PYLITH_COMPONENT_DEBUG("_getSubfield(field="<<field.getLabel()<<", name="<<name<<", submesh="<<typeid(submesh).name()<<")");
 
-    if (_subfields.count(name) == 0) {
+    if (0 == _subfields.count(name) ) {
         _subfields[name] = OutputSubfield::create(field, submesh, name, _outputBasisOrder);
     } // if
 

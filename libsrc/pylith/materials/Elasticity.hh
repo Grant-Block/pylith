@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -31,7 +31,7 @@
 class pylith::materials::Elasticity : public pylith::materials::Material {
     friend class TestElasticity; // unit testing
 
-    // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC METHODS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /// Default constructor.
@@ -101,7 +101,34 @@ public:
     pylith::topology::Field* createDerivedField(const pylith::topology::Field& solution,
                                                 const pylith::topology::Mesh& domainMesh);
 
-    // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////////////
+    /** Get default PETSc solver options appropriate for material.
+     *
+     * @param[in] isParallel True if running in parallel, False if running in serial.
+     * @param[in] hasFault True if problem has fault, False otherwise.
+     * @returns PETSc solver options.
+     */
+    pylith::utils::PetscOptions* getSolverDefaults(const bool isParallel,
+                                                   const bool hasFault) const;
+
+    /** Get residual kernels for an interior interface bounding material.
+     *
+     * @param[in] solution Solution field.
+     * @param[in] face Side of interior interface for kernels.
+     * @returns Array of residual kernels for interior interface.
+     */
+    std::vector<InterfaceResidualKernels> getInterfaceKernelsResidual(const pylith::topology::Field& solution,
+                                                                      pylith::feassemble::IntegratorInterface::FaceEnum face) const;
+
+    /** Get Jacobian kernels for an interior interface bounding material.
+     *
+     * @param[in] solution Solution field.
+     * @param[in] face Side of interior interface for kernels.
+     * @returns Array of Jacobian kernels for interior interface.
+     */
+    std::vector<InterfaceJacobianKernels> getInterfaceKernelsJacobian(const pylith::topology::Field& solution,
+                                                                      pylith::feassemble::IntegratorInterface::FaceEnum face) const;
+
+    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
 protected:
 
     /** Get auxiliary factory associated with physics.
@@ -122,32 +149,24 @@ protected:
      */
     pylith::topology::FieldFactory* _getDerivedFactory(void);
 
-    // PRIVATE MEMBERS /////////////////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE MEMBERS ////////////////////////////////////////////////////////////////////////////
 private:
 
-    /** Set kernels for RHS residual.
+    /** Set kernels for residual.
      *
      * @param[out] integrator Integrator for material.
      * @param[in] solution Solution field.
      */
-    void _setKernelsRHSResidual(pylith::feassemble::IntegratorDomain* integrator,
-                                const pylith::topology::Field& solution) const;
+    void _setKernelsResidual(pylith::feassemble::IntegratorDomain* integrator,
+                             const pylith::topology::Field& solution) const;
 
-    /** Set kernels for LHS residual.
+    /** Set kernels for Jacobian.
      *
      * @param[out] integrator Integrator for material.
      * @param[in] solution Solution field.
      */
-    void _setKernelsLHSResidual(pylith::feassemble::IntegratorDomain* integrator,
-                                const pylith::topology::Field& solution) const;
-
-    /** Set kernels for LHS Jacobian.
-     *
-     * @param[out] integrator Integrator for material.
-     * @param[in] solution Solution field.
-     */
-    void _setKernelsLHSJacobian(pylith::feassemble::IntegratorDomain* integrator,
-                                const pylith::topology::Field& solution) const;
+    void _setKernelsJacobian(pylith::feassemble::IntegratorDomain* integrator,
+                             const pylith::topology::Field& solution) const;
 
     /** Set kernels for computing updated state variables in auxiliary field.
      *
@@ -165,15 +184,14 @@ private:
     void _setKernelsDerivedField(pylith::feassemble::IntegratorDomain* integrator,
                                  const pylith::topology::Field& solution) const;
 
-    // PRIVATE MEMBERS /////////////////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE MEMBERS ////////////////////////////////////////////////////////////////////////////
 private:
 
-    bool _useInertia; ///< Flag to include inertial term.
     bool _useBodyForce; ///< Flag to include body force term.
     pylith::materials::RheologyElasticity* _rheology; ///< Bulk rheology for elasticity.
     pylith::materials::DerivedFactoryElasticity* _derivedFactory; ///< Factory for creating derived fields.
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     Elasticity(const Elasticity&); ///< Not implemented.

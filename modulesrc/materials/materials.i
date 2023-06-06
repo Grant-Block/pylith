@@ -2,14 +2,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -26,9 +26,11 @@
 #include "pylith/materials/IsotropicLinearMaxwell.hh"
 #include "pylith/materials/IsotropicLinearGenMaxwell.hh"
 #include "pylith/materials/IsotropicPowerLaw.hh"
+
 #include "pylith/materials/IncompressibleElasticity.hh"
 #include "pylith/materials/RheologyIncompressibleElasticity.hh"
 #include "pylith/materials/IsotropicLinearIncompElasticity.hh"
+
 #include "pylith/materials/Poroelasticity.hh"
 #include "pylith/materials/RheologyPoroelasticity.hh"
 #include "pylith/materials/IsotropicLinearPoroelasticity.hh"
@@ -68,9 +70,11 @@ import_array();
 %include "IsotropicLinearMaxwell.i"
 %include "IsotropicLinearGenMaxwell.i"
 %include "IsotropicPowerLaw.i"
+
 %include "IncompressibleElasticity.i"
 %include "RheologyIncompressibleElasticity.i"
 %include "IsotropicLinearIncompElasticity.i"
+
 %include "Poroelasticity.i"
 %include "RheologyPoroelasticity.i"
 %include "IsotropicLinearPoroelasticity.i"

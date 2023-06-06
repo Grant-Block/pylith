@@ -2,58 +2,45 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pythia.pyre/meshio/MeshIOObj.py
-#
-# @brief Python abstract base class for finite-element mesh I/O.
-#
-# Factory: mesh_io
 
 from pylith.utils.PetscComponent import PetscComponent
 from .meshio import MeshIO as ModuleMeshIO
 
 
 class MeshIOObj(PetscComponent, ModuleMeshIO):
-    """Python abstract base class for finite-element mesh I/O.
     """
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    Abstract base class for finite-element mesh readers.
+    """
 
     def __init__(self, name="meshio"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="mesh_io")
         self.coordsys = None
-        return
 
     def preinitialize(self):
         """Do minimal initialization."""
         self._createModuleObj()
         ModuleMeshIO.setIdentifier(self, self.aliases[-1])
-        return
 
     def read(self, debug):
         """Read finite-element mesh and store in Sieve mesh object.
 
         @returns PETSc DMPlex mesh object containing finite-element mesh
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log("Reading finite-element mesh")
-
-        # Set flags
-        self.debug(debug)
 
         # Initialize coordinate system
         if self.coordsys is None:
@@ -65,7 +52,7 @@ class MeshIOObj(PetscComponent, ModuleMeshIO):
         mesh.setCoordSys(self.coordsys)
 
         # Read mesh
-        ModuleMeshIO.read(self, mesh)
+        ModuleMeshIO.read(self, mesh, debug)
         return mesh
 
     def write(self, mesh):
@@ -73,26 +60,20 @@ class MeshIOObj(PetscComponent, ModuleMeshIO):
 
         @param mesh PETSc mesh object containing finite-element mesh
         """
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root
+        if mpi_is_root():
             self._info.log("Writing finite-element mesh")
         ModuleMeshIO.write(self, mesh)
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
 
     def _configure(self):
         """Set members based using inventory.
         """
         PetscComponent._configure(self)
-        return
 
     def _createModuleObj(self):
         """Create C++ MeshIO object.
         """
         raise NotImplementedError("MeshIO is an abstract base class.")
-        return
 
 
 # End of file

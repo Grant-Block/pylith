@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -24,7 +24,7 @@
 
 namespace pylith {
     namespace problems {
-        class Problem : public pylith::utils::PyreComponent {
+        class Problem: public pylith::utils::PyreComponent {
             // PUBLIC ENUM /////////////////////////////////////////////////////////////////////////////////////////////
 public:
 
@@ -68,6 +68,12 @@ public:
              * @returns Solver type.
              */
             SolverTypeEnum getSolverType(void) const;
+
+            /** Specify which default PETSc options to use.
+             *
+             * @param[in] flags Flags indicating which default PETSc options to set.
+             */
+            void setPetscDefaults(const int flags);
 
             /** Set manager of scales used to nondimensionalize problem.
              *

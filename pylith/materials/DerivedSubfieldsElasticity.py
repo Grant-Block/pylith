@@ -2,29 +2,34 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/materials/AuxSubieldsElasticity.py
-#
-# @brief Python container for elasticity equation subfields.
 
 from pylith.utils.PetscComponent import PetscComponent
 
 
 class DerivedSubfieldsElasticity(PetscComponent):
-    """Python container for derived subfields for elasticity.
-
-    FACTORY: derived_subfields
     """
+    Derived subfields associated with the elasticity equation.
+
+    For elastic materials these derived subfields are available for output in addition to the solution and auxiliary subfields.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            # The basis order for stress and strain should be at least 1 less than the basis order for displacement.
+            [pylithapp.problem.materials.mat_elastic.derived_subfields]
+            cauchy_stress.basis_order = 0
+            cauchy_strain.basis_order = 0
+        """
+    }
 
     import pythia.pyre.inventory
 
@@ -36,13 +41,14 @@ class DerivedSubfieldsElasticity(PetscComponent):
     cauchyStrain = pythia.pyre.inventory.facility("cauchy_strain", family="subfield", factory=Subfield)
     cauchyStrain.meta['tip'] = "Cauchy strain subfield."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
     def __init__(self, name="derivedsubfieldselasticity"):
         """Constructor.
         """
         PetscComponent.__init__(self, name, facility="derived_subfields")
-        return
+
+    def _defaults(self):
+        self.cauchyStress.basisOrder = 0
+        self.cauchyStrain.basisOrder = 0
 
 
 # FACTORIES ////////////////////////////////////////////////////////////

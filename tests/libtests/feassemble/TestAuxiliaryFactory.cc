@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -90,7 +90,7 @@ void
 pylith::feassemble::TestAuxiliaryFactory::testQueryDB(void) {
     spatialdata::spatialdb::UserFunctionDB db;
     const std::string& dbLabel = "test database";
-    db.setLabel(dbLabel.c_str());
+    db.setDescription(dbLabel.c_str());
 
     CPPUNIT_ASSERT(_factory);
     CPPUNIT_ASSERT_MESSAGE("Default spatial database should be NULL.", !_factory->getQueryDB());
@@ -98,7 +98,7 @@ pylith::feassemble::TestAuxiliaryFactory::testQueryDB(void) {
 
     const spatialdata::spatialdb::SpatialDB* dbTest = _factory->getQueryDB();
     CPPUNIT_ASSERT(dbTest);
-    CPPUNIT_ASSERT_EQUAL(dbLabel, std::string(dbTest->getLabel()));
+    CPPUNIT_ASSERT_EQUAL(dbLabel, std::string(dbTest->getDescription()));
 } // testQueryDB
 
 
@@ -106,25 +106,26 @@ pylith::feassemble::TestAuxiliaryFactory::testQueryDB(void) {
 // Test setSubfieldDiscretization() and getSubfieldDiscretization().
 void
 pylith::feassemble::TestAuxiliaryFactory::testSubfieldDiscretization(void) {
-    pylith::topology::FieldBase::Discretization feDisp(2, 2, -1, 2, pylith::topology::FieldBase::SIMPLEX_BASIS,
-                                                       true, pylith::topology::FieldBase::POLYNOMIAL_SPACE);
-    pylith::topology::FieldBase::Discretization feVel(3, 2, 1, 2, pylith::topology::FieldBase::SIMPLEX_BASIS,
-                                                      false, pylith::topology::FieldBase::POINT_SPACE);
+    pylith::topology::FieldBase::Discretization feDisp(2, 2, -1, 2, false, pylith::topology::FieldBase::SIMPLEX_BASIS,
+                                                       pylith::topology::FieldBase::POLYNOMIAL_SPACE, true);
+    pylith::topology::FieldBase::Discretization feVel(3, 2, 1, 2, true, pylith::topology::FieldBase::SIMPLEX_BASIS,
+                                                      pylith::topology::FieldBase::POINT_SPACE, false);
 
     CPPUNIT_ASSERT(_factory);
     _factory->setSubfieldDiscretization("displacement", feDisp.basisOrder, feDisp.quadOrder, feDisp.dimension,
-                                        feDisp.cellBasis, feDisp.isBasisContinuous, feDisp.feSpace);
+                                        feDisp.isFaultOnly, feDisp.cellBasis, feDisp.feSpace, feDisp.isBasisContinuous);
     _factory->setSubfieldDiscretization("velocity", feVel.basisOrder, feVel.quadOrder, feVel.dimension,
-                                        feVel.cellBasis, feVel.isBasisContinuous, feVel.feSpace);
+                                        feVel.isFaultOnly, feVel.cellBasis, feVel.feSpace, feVel.isBasisContinuous);
 
     { // Check displacement discretization
         const pylith::topology::FieldBase::Discretization& feTest = _factory->getSubfieldDiscretization("displacement");
         CPPUNIT_ASSERT_EQUAL(feDisp.basisOrder, feTest.basisOrder);
         CPPUNIT_ASSERT_EQUAL(feDisp.quadOrder, feTest.quadOrder);
         CPPUNIT_ASSERT_EQUAL(feDisp.dimension, feTest.dimension);
+        CPPUNIT_ASSERT_EQUAL(feDisp.isFaultOnly, feTest.isFaultOnly);
         CPPUNIT_ASSERT_EQUAL(feDisp.cellBasis, feTest.cellBasis);
-        CPPUNIT_ASSERT_EQUAL(feDisp.isBasisContinuous, feTest.isBasisContinuous);
         CPPUNIT_ASSERT_EQUAL(feDisp.feSpace, feTest.feSpace);
+        CPPUNIT_ASSERT_EQUAL(feDisp.isBasisContinuous, feTest.isBasisContinuous);
     } // Check displacement discretization
 
     { // Check velocity discretization
@@ -132,9 +133,10 @@ pylith::feassemble::TestAuxiliaryFactory::testSubfieldDiscretization(void) {
         CPPUNIT_ASSERT_EQUAL(feVel.basisOrder, feTest.basisOrder);
         CPPUNIT_ASSERT_EQUAL(feVel.quadOrder, feTest.quadOrder);
         CPPUNIT_ASSERT_EQUAL(feVel.dimension, feTest.dimension);
+        CPPUNIT_ASSERT_EQUAL(feVel.isFaultOnly, feTest.isFaultOnly);
         CPPUNIT_ASSERT_EQUAL(feVel.cellBasis, feTest.cellBasis);
-        CPPUNIT_ASSERT_EQUAL(feVel.isBasisContinuous, feTest.isBasisContinuous);
         CPPUNIT_ASSERT_EQUAL(feVel.feSpace, feTest.feSpace);
+        CPPUNIT_ASSERT_EQUAL(feVel.isBasisContinuous, feTest.isBasisContinuous);
     } // Check velocity discretization
 
     { // default for unknown discretization
@@ -142,9 +144,10 @@ pylith::feassemble::TestAuxiliaryFactory::testSubfieldDiscretization(void) {
         CPPUNIT_ASSERT_EQUAL(1, feTest.basisOrder);
         CPPUNIT_ASSERT_EQUAL(1, feTest.quadOrder);
         CPPUNIT_ASSERT_EQUAL(-1, feTest.dimension);
+        CPPUNIT_ASSERT_EQUAL(false, feTest.isFaultOnly);
         CPPUNIT_ASSERT_EQUAL(pylith::topology::FieldBase::DEFAULT_BASIS, feTest.cellBasis);
-        CPPUNIT_ASSERT_EQUAL(true, feTest.isBasisContinuous);
         CPPUNIT_ASSERT_EQUAL(pylith::topology::FieldBase::POLYNOMIAL_SPACE, feTest.feSpace);
+        CPPUNIT_ASSERT_EQUAL(true, feTest.isBasisContinuous);
     }
 } // testSubfieldDiscretization
 
@@ -240,13 +243,15 @@ pylith::feassemble::TestAuxiliaryFactory::testSetValuesFromDB(void) {
 
     pylith::topology::Mesh mesh;
     pylith::meshio::MeshIOAscii iohandler;
-    iohandler.filename("data/tri.mesh");
+    iohandler.setFilename("data/tri.mesh");
     iohandler.read(&mesh);
     mesh.setCoordSys(&cs);
     pylith::topology::MeshOps::nondimensionalize(&mesh, normalizer);
 
-    CPPUNIT_ASSERT_MESSAGE("Test mesh does not contain any cells.", mesh.numCells() > 0);
-    CPPUNIT_ASSERT_MESSAGE("Test mesh does not contain any vertices.", mesh.numVertices() > 0);
+    CPPUNIT_ASSERT_MESSAGE("Test mesh does not contain any cells.",
+                           pylith::topology::MeshOps::getNumCells(mesh) > 0);
+    CPPUNIT_ASSERT_MESSAGE("Test mesh does not contain any vertices.",
+                           pylith::topology::MeshOps::getNumVertices(mesh) > 0);
 
     CPPUNIT_ASSERT(_factory);
     _factory->setQueryDB(&auxiliaryDB);
@@ -266,12 +271,12 @@ pylith::feassemble::TestAuxiliaryFactory::testSetValuesFromDB(void) {
     // Verify auxiliary field
     PylithReal norm = 0.0;
     PylithReal t = 0.0;
-    const PetscDM dmField = auxiliaryField.dmMesh();CPPUNIT_ASSERT(dmField);
+    const PetscDM dmField = auxiliaryField.getDM();CPPUNIT_ASSERT(dmField);
     pylith::topology::FieldQuery query(auxiliaryField);
     query.initializeWithDefaultQueries();
     query.openDB(&auxiliaryDB, normalizer.getLengthScale());
     PetscErrorCode err = DMPlexComputeL2DiffLocal(dmField, t, query._functions, (void**)query._contextPtrs,
-                                                  auxiliaryField.localVector(), &norm);CPPUNIT_ASSERT(!err);
+                                                  auxiliaryField.getLocalVector(), &norm);CPPUNIT_ASSERT(!err);
     query.closeDB(&auxiliaryDB);
     const PylithReal tolerance = 1.0e-6;
     CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE("Test of auxiliary field values failed.", 0.0, norm, tolerance);

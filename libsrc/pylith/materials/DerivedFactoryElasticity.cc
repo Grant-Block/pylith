@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -24,23 +24,24 @@
 
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
 
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL*
 
 #include <cassert>
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::materials::DerivedFactoryElasticity::DerivedFactoryElasticity(void) {
     GenericComponent::setName("derivedfactoryelasticity");
 } // constructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::materials::DerivedFactoryElasticity::~DerivedFactoryElasticity(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add Cauchy stress subfield to derived field.
 void
 pylith::materials::DerivedFactoryElasticity::addCauchyStress(void) {
@@ -70,7 +71,7 @@ pylith::materials::DerivedFactoryElasticity::addCauchyStress(void) {
 } // addCauchyStress
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add Cauchy (infinitesimal) strain subfield to derived fields.
 void
 pylith::materials::DerivedFactoryElasticity::addCauchyStrain(void) {
@@ -99,7 +100,7 @@ pylith::materials::DerivedFactoryElasticity::addCauchyStrain(void) {
 } // addCauchyStrain
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add subfields using discretizations provided.
 void
 pylith::materials::DerivedFactoryElasticity::addSubfields(void) {

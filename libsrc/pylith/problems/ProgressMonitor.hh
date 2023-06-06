@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, Rice University
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2019 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -78,17 +78,7 @@ public:
     /// Close progress monitor.
     void close(void);
 
-    /** Update progress.
-     *
-     * @param[in current Current step.
-     * @param[in] start Starting step.
-     * @param[in] stop Ending step.
-     */
-    void update(const double current,
-                const double start,
-                const double stop);
-
-    // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
 protected:
 
     /// Open progress monitor.
@@ -99,29 +89,26 @@ protected:
     virtual
     void _close(void) = 0;
 
-    /** Update progress.
-     *
-     * @param[in current Current step.
-     * @param[in] now Current time.
-     * @param[in] percentComplete Percent completed
-     * @param[in] finished Time stamp of estimated finish.
+    /** Compute finish time.
+     * @param[in] percentComplete Percent of simulation complete.
+     * @param[in] now Current data/time.
+     * @param[in] startTime Date/time at start of simulation.
+     * @returns String with estimated finish time.
      */
-    virtual
-    void _update(const double current,
-                 const time_t& now,
-                 const double percentComplete,
-                 const char* finished) = 0;
+    std::string _calcFinishTime(const double percentComplete,
+                                const time_t& now,
+                                const time_t& startTime);
 
-    // PRIVATE MEMBERS //////////////////////////////////////////////////////
-private:
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
+protected:
 
     double _updatePercent; ///< Percentage of completion between status reports.
     std::string _filename; ///< Name of output file.
     time_t _startTime;
-    int _iUpdate; /// Current update step.
+    long _iUpdate; /// Current update step.
     bool _isMaster; ///< Is master process.
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     ProgressMonitor(const ProgressMonitor&); ///< Not implemented.

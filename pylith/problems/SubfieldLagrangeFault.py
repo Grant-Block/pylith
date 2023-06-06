@@ -2,47 +2,43 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/problems/SubfieldLagrangeFault.py
-#
-# @brief Python object for fault Lagrange multipliers subfield.
-#
-# Factory: subfield.
 
 from .SolutionSubfield import SolutionSubfield
 
 
 class SubfieldLagrangeFault(SolutionSubfield):
-    """Python object for fault Lagrange multipliers subfield.
-
-    FACTORY: soln_subfield
     """
+    Object for defining attributes of the fault Lagrange multiplier solution subfield.
 
-    import pythia.pyre.inventory
-
-    from .SolutionSubfield import validateAlias
-    userAlias = pythia.pyre.inventory.str("alias", default="lagrange_multiplier_fault", validator=validateAlias)
-    userAlias.meta['tip'] = "Name for subfield."
+    Implements `SolutionSubfield`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+        [pylithapp.problems.solution.subfields.lagrange_fault]
+        alias = lagrange_multiplier_fault
+        basis_order = 1
+        """
+    }
 
     fieldName = "lagrange_multiplier_fault"
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
 
     def __init__(self, name="subfieldlagrangefault"):
         """Constructor.
         """
         SolutionSubfield.__init__(self, name)
-        return
+
+    def _defaults(self):
+        self.userAlias = self.fieldName
 
     def initialize(self, normalizer, spaceDim):
         """Initialize subfield metadata.
@@ -52,15 +48,12 @@ class SubfieldLagrangeFault(SolutionSubfield):
         self.vectorFieldType = Field.VECTOR
         self.scale = normalizer.getPressureScale()
         self._setComponents(spaceDim)
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
+        self.isFaultOnly = True
 
     def _configure(self):
         """Set members based using inventory.
         """
         SolutionSubfield._configure(self)
-        return
 
 # FACTORIES ////////////////////////////////////////////////////////////
 

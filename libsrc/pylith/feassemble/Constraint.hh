@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -52,6 +52,42 @@ public:
     virtual
     void deallocate(void);
 
+    /** Set name of constrained solution subfield.
+     *
+     * @param[in] value Name of solution subfield.
+     */
+    void setSubfieldName(const char* value);
+
+    /** Get name of constrained solution subfield.
+     *
+     * @preturn Name of solution subfield.
+     */
+    const char* getSubfieldName(void) const;
+
+    /** Set name of label marking boundary associated with constraint.
+     *
+     * @param[in] value Name of label for surface (from mesh generator).
+     */
+    void setLabelName(const char* value);
+
+    /** Get name of label marking boundary associated with constraint.
+     *
+     * @returns Name of label for surface (from mesh generator).
+     */
+    const char* getLabelName(void) const;
+
+    /** Set value of label marking boundary associated with constraint.
+     *
+     * @param[in] value Value of label for surface (from mesh generator).
+     */
+    void setLabelValue(const int value);
+
+    /** Get value of label marking boundary associated with constraint.
+     *
+     * @returns Value of label for surface (from mesh generator).
+     */
+    int getLabelValue(void) const;
+
     /** Set indices of constrained degrees of freedom at each location.
      *
      * Example: [0, 1] to apply forces to x and y degrees of freedom in
@@ -68,30 +104,6 @@ public:
      * @returns Array of indices for constrained degrees of freedom.
      */
     const pylith::int_array& getConstrainedDOF(void) const;
-
-    /** Set label marking constrained degrees of freedom.
-     *
-     * @param[in] value Label of constrained degrees of freedom (from mesh generator).
-     */
-    void setMarkerLabel(const char* value);
-
-    /** Get label marking constrained degrees of freedom.
-     *
-     * @returns Label of constrained degrees of freedom (from mesh generator).
-     */
-    const char* getMarkerLabel(void) const;
-
-    /** Set name of constrained solution subfield.
-     *
-     * @param[in] value Name of solution subfield.
-     */
-    void setSubfieldName(const char* value);
-
-    /** Get name of constrained solution subfield.
-     *
-     * @preturn Name of solution subfield.
-     */
-    const char* getSubfieldName(void) const;
 
     /** Get mesh associated with constrained boundary.
      *
@@ -119,32 +131,28 @@ public:
                   const PylithReal dt,
                   const pylith::topology::Field& solution);
 
-    /** Update auxiliary field values to current time.
+    /** Set auxiliary field values for current time.
      *
      * @param[in] t Current time.
      */
     virtual
-    void updateState(const PylithReal t);
+    void setState(const PylithReal t);
 
     /** Set constrained values in solution field.
      *
-     * @param[out] solution Solution field.
-     * @param[in] t Current time.
+     * @param[inout] integrationData Data needed to integrate governing equation.
      */
     virtual
-    void setSolution(pylith::topology::Field* solution,
-                     const double t) = 0;
-
-    virtual
-    void setSolutionDot(pylith::topology::Field* solutionDot,
-                        const double t);
+    void setSolution(pylith::feassemble::IntegrationData* integrationData) = 0;
 
     // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
 protected:
 
-    int_array _constrainedDOF; ///< List of constrained degrees of freedom at each location.
-    std::string _constraintLabel; ///< Label marking constrained degrees of freedom.
     std::string _subfieldName; ///< Name of solution subfield that is constrained.
+    std::string _labelName; ///< Name of label associated with integration domain.
+    int _labelValue; ///< Value of label associated with integration domain.
+
+    int_array _constrainedDOF; ///< List of constrained degrees of freedom at each location.
     pylith::topology::Mesh* _boundaryMesh; ///< Boundary mesh.
     PylithReal _tSolution; ///< Time used for current solution.
 

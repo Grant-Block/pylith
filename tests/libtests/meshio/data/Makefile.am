@@ -4,17 +4,42 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
+
+dist_noinst_HEADERS = \
+	DataWriterData.hh \
+	DataWriterDataPoints.hh \
+	DataWriterHDF5DataFaultMeshHex8.hh \
+	DataWriterHDF5DataFaultMeshQuad4.hh \
+	DataWriterHDF5DataFaultMeshTet4.hh \
+	DataWriterHDF5DataFaultMeshTri3.hh \
+	DataWriterVTKDataFaultMeshHex8.hh \
+	DataWriterVTKDataFaultMeshQuad4.hh \
+	DataWriterVTKDataFaultMeshTet4.hh \
+	DataWriterVTKDataFaultMeshTri3.hh \
+	MeshData.hh \
+	MeshData1D.hh \
+	MeshData1Din2D.hh \
+	MeshData1Din3D.hh \
+	MeshData2D.hh \
+	MeshData2Din3D.hh \
+	MeshData3D.hh \
+	MeshData3DIndexOne.hh \
+	OutputSolnPointsData.hh \
+	OutputSolnPointsDataHex8.hh \
+	OutputSolnPointsDataQuad4.hh \
+	OutputSolnPointsDataTet4.hh \
+	OutputSolnPointsDataTri3.hh
 
 dist_noinst_DATA = \
 	mesh2D_comments.txt \
@@ -39,6 +64,14 @@ dist_noinst_DATA = \
 	mesh_quad4.exo \
 	mesh_tet4.exo \
 	mesh_hex8.exo \
+	box_tri_ascii.msh \
+	box_tri_binary.msh \
+	box_quad_ascii.msh \
+	box_quad_binary.msh \
+	box_tet_ascii.msh \
+	box_tet_binary.msh \
+	box_hex_ascii.msh \
+	box_hex_binary.msh \
 	tri3.mesh \
 	tri3_vertex_t10.vtk \
 	tri3_cell_t10.vtk \
@@ -164,16 +197,8 @@ dist_noinst_DATA = \
 
 noinst_TMP =
 
-# 'export' the input files by performing a mock install
-export_datadir = $(abs_top_builddir)/tests/libtests/meshio/data
-export-data: $(dist_noinst_DATA)
-	if [ "X$(abs_top_srcdir)" != "X$(abs_top_builddir)" ]; then for f in $(dist_noinst_DATA); do $(install_sh_DATA) $(srcdir)/$$f $(export_datadir); done; fi
-
-clean-data:
-	if [ "X$(abs_top_srcdir)" != "X$(abs_top_builddir)" ]; then for f in $(dist_noinst_DATA) $(noinst_TMP); do $(RM) $(RM_FLAGS) $(export_datadir)/$$f; done; fi
-
-BUILT_SOURCES = export-data
-clean-local: clean-data
+export_datadir = $(abs_builddir)
+include $(top_srcdir)/tests/data.am
 
 
 # End of file 

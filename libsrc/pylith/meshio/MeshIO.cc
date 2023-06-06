@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -36,8 +36,7 @@
 // ----------------------------------------------------------------------
 // Constructor
 pylith::meshio::MeshIO::MeshIO(void) :
-    _mesh(0),
-    _debug(false) { // constructor
+    _mesh(0) {
 } // constructor
 
 
@@ -59,21 +58,21 @@ pylith::meshio::MeshIO::deallocate(void) { // deallocate
 // Get spatial dimension of mesh.
 int
 pylith::meshio::MeshIO::getMeshDim(void) const { // getMeshDim
-    return (_mesh) ? _mesh->dimension() : 0;
+    return (_mesh) ? _mesh->getDimension() : 0;
 } // getMeshDim
 
 
 // ----------------------------------------------------------------------
 // Read mesh from file.
 void
-pylith::meshio::MeshIO::read(topology::Mesh* mesh) {
+pylith::meshio::MeshIO::read(pylith::topology::Mesh* mesh,
+			     const bool checkTopology) {
     PYLITH_METHOD_BEGIN;
 
     assert(mesh);
     assert(!_mesh);
 
     _mesh = mesh;
-    _mesh->debug(_debug);
     _read();
 
     PetscErrorCode err = 0;
@@ -81,8 +80,8 @@ pylith::meshio::MeshIO::read(topology::Mesh* mesh) {
     // Check for bounding box with positive volume.
     PylithReal cmin[3];
     PylithReal cmax[3];
-    err = DMGetBoundingBox(_mesh->dmMesh(), cmin, cmax);
-    const PetscInt dim = _mesh->dimension();
+    err = DMGetBoundingBox(_mesh->getDM(), cmin, cmax);
+    const PetscInt dim = _mesh->getDimension();
     PylithReal volume = 1.0;
     for (int i = 0; i < dim; ++i) {
         volume *= cmax[i] - cmin[i];
@@ -92,7 +91,7 @@ pylith::meshio::MeshIO::read(topology::Mesh* mesh) {
     for (int i = 0; i < dim; ++i) {
         msg << "\n    (" << cmin[i] << ", " << cmax[i] << ")";
     } // for
-    PYLITH_COMPONENT_INFO(msg.str());
+    PYLITH_COMPONENT_INFO_ROOT(msg.str());
     const PetscReal tolerance = 1.0e-8;
     if (volume < tolerance) {
         msg.clear();
@@ -104,9 +103,16 @@ pylith::meshio::MeshIO::read(topology::Mesh* mesh) {
     } // if
 
     // Check mesh consistency
-    topology::MeshOps::checkTopology(*_mesh);
+    if (checkTopology) {
+      pylith::topology::MeshOps::checkTopology(*_mesh);
+    } // if
+
+    pythia::journal::debug_t debug(PyreComponent::getName());
+    if (debug.state()) {
+        _mesh->view("::ascii_info_detail");
+    } // if
     // Respond to PETSc diagnostic output
-    err = DMViewFromOptions(_mesh->dmMesh(), NULL, "-pylith_dm_view");PYLITH_CHECK_ERROR(err);
+    err = DMViewFromOptions(_mesh->getDM(), NULL, "-pylith_dm_view");PYLITH_CHECK_ERROR(err);
 
     _mesh = NULL;
 
@@ -117,7 +123,7 @@ pylith::meshio::MeshIO::read(topology::Mesh* mesh) {
 // ----------------------------------------------------------------------
 // Write mesh to file.
 void
-pylith::meshio::MeshIO::write(topology::Mesh* const mesh) { // write
+pylith::meshio::MeshIO::write(pylith::topology::Mesh* const mesh) { // write
     PYLITH_METHOD_BEGIN;
 
     assert(mesh);
@@ -147,7 +153,7 @@ pylith::meshio::MeshIO::_getVertices(scalar_array* coordinates,
     const spatialdata::geocoords::CoordSys* cs = _mesh->getCoordSys();assert(cs);
     *spaceDim = cs->getSpaceDim();
 
-    PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
     PetscVec coordVec = NULL;
     PetscScalar* coordArray = NULL;
     PetscInt coordSize = 0;
@@ -180,15 +186,16 @@ void
 pylith::meshio::MeshIO::_getCells(int_array* cells,
                                   int* numCells,
                                   int* numCorners,
-                                  int* meshDim) const { // _getCells
+                                  int* meshDim) const {
     PYLITH_METHOD_BEGIN;
 
     assert(cells);
     assert(numCells);
+    assert(numCorners);
     assert(meshDim);
     assert(_mesh);
 
-    PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
     topology::Stratum cellsStratum(dmMesh, topology::Stratum::HEIGHT, 0);
     const PetscInt cStart = cellsStratum.begin();
     const PetscInt cEnd = cellsStratum.end();
@@ -197,9 +204,9 @@ pylith::meshio::MeshIO::_getCells(int_array* cells,
     const PetscInt vStart = verticesStratum.begin();
     const PetscInt vEnd = verticesStratum.end();
 
-    *numCells = _mesh->numCells();
-    *numCorners = _mesh->numCorners();
-    *meshDim = _mesh->dimension();
+    *numCells = pylith::topology::MeshOps::getNumCells(*_mesh);assert(*numCells > 0);
+    *numCorners = pylith::topology::MeshOps::getNumCorners(*_mesh);assert(*numCorners > 0);
+    *meshDim = _mesh->getDimension();
     assert(cellsStratum.size() == *numCells);
 
     cells->resize((*numCells)*(*numCorners));
@@ -235,13 +242,16 @@ pylith::meshio::MeshIO::_getCells(int_array* cells,
 // ----------------------------------------------------------------------
 // Tag cells in mesh with material identifiers.
 void
-pylith::meshio::MeshIO::_setMaterials(const int_array& materialIds) { // _setMaterials
+pylith::meshio::MeshIO::_setMaterials(const int_array& materialIds) {
     PYLITH_METHOD_BEGIN;
-
     assert(_mesh);
 
-    if (!_mesh->commRank()) {
-        PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
+    PetscErrorCode err = 0;
+    const char* const labelName = pylith::topology::Mesh::cells_label_name;
+
+    if (!_mesh->getCommRank()) {
+        PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
         topology::Stratum cellsStratum(dmMesh, topology::Stratum::HEIGHT, 0);
         const PetscInt cStart = cellsStratum.begin();
         const PetscInt cEnd = cellsStratum.end();
@@ -252,12 +262,12 @@ pylith::meshio::MeshIO::_setMaterials(const int_array& materialIds) { // _setMat
                 << materialIds.size() << ") and number of cells in mesh ("<< (cEnd - cStart) << ").";
             throw std::runtime_error(msg.str());
         } // if
-        PetscErrorCode err = 0;
-        const char* const labelName = pylith::topology::Mesh::getCellsLabelName();
         for (PetscInt c = cStart; c < cEnd; ++c) {
             err = DMSetLabelValue(dmMesh, labelName, c, materialIds[c-cStart]);PYLITH_CHECK_ERROR(err);
         } // for
-    } // if
+    } else {
+        err = DMCreateLabel(dmMesh, labelName);PYLITH_CHECK_ERROR(err);
+    } // if/else
 
     PYLITH_METHOD_END;
 } // _setMaterials
@@ -272,7 +282,7 @@ pylith::meshio::MeshIO::_getMaterials(int_array* materialIds) const {
     assert(materialIds);
     assert(_mesh);
 
-    PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
     topology::Stratum cellsStratum(dmMesh, topology::Stratum::HEIGHT, 0);
     const PetscInt cStart = cellsStratum.begin();
     const PetscInt cEnd = cellsStratum.end();
@@ -280,7 +290,7 @@ pylith::meshio::MeshIO::_getMaterials(int_array* materialIds) const {
     materialIds->resize(cellsStratum.size());
     PetscErrorCode err = 0;
     PetscInt matId = 0;
-    const char* const labelName = pylith::topology::Mesh::getCellsLabelName();
+    const char* const labelName = pylith::topology::Mesh::cells_label_name;
     for (PetscInt c = cStart, index = 0; c < cEnd; ++c) {
         err = DMGetLabelValue(dmMesh, labelName, c, &matId);PYLITH_CHECK_ERROR(err);
         (*materialIds)[index++] = matId;
@@ -300,7 +310,7 @@ pylith::meshio::MeshIO::_setGroup(const std::string& name,
 
     assert(_mesh);
 
-    PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
     const PetscInt numPoints = points.size();
     DMLabel label;
     PetscErrorCode err;
@@ -372,14 +382,14 @@ pylith::meshio::MeshIO::_getGroupNames(string_vector* names) const { // _getGrou
     assert(names);
     assert(_mesh);
 
-    PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
     PetscInt numLabels = 0;
     PetscErrorCode err = 0;
     err = DMGetNumLabels(dmMesh, &numLabels);PYLITH_CHECK_ERROR(err);
     const PetscInt numGroups = numLabels - 3; // Remove depth, celltype, and material labels.
     names->resize(numGroups);
 
-    const std::string& materialLabelName = pylith::topology::Mesh::getCellsLabelName();
+    const std::string& materialLabelName = pylith::topology::Mesh::cells_label_name;
     for (int iGroup = 0, iLabel = 0; iLabel < numLabels; ++iLabel) {
         const char* labelName = NULL;
         err = DMGetLabelName(dmMesh, iLabel, &labelName);PYLITH_CHECK_ERROR(err);
@@ -406,7 +416,7 @@ pylith::meshio::MeshIO::_getGroup(int_array* points,
     assert(groupType);
     assert(_mesh);
 
-    PetscDM dmMesh = _mesh->dmMesh();assert(dmMesh);
+    PetscDM dmMesh = _mesh->getDM();assert(dmMesh);
     topology::Stratum cellsStratum(dmMesh, topology::Stratum::HEIGHT, 0);
     const PetscInt cStart = cellsStratum.begin();
     const PetscInt cEnd = cellsStratum.end();

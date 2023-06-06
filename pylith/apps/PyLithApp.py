@@ -2,14 +2,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -36,14 +36,13 @@ class PyLithApp(PetscApplication):
                                       validator=pythia.pyre.inventory.choice(['relaxed', 'strict', 'pedantic']))
     typos.meta['tip'] = "Specifies the handling of unknown properties and facilities"
 
+    initializeOnly = pythia.pyre.inventory.bool("initialize_only", default=False)
+    initializeOnly.meta['tip'] = "Stop simulation after initializing problem."
+
     from pylith.utils.SimulationMetadata import SimulationMetadata
     metadata = pythia.pyre.inventory.facility(
         "metadata", family="simulation_metadata", factory=SimulationMetadata)
     metadata.meta["tip"] = "Simulation metadata."
-
-    initializeOnly = pythia.pyre.inventory.bool(
-        "initialize_only", default=False)
-    initializeOnly.meta['tip'] = "Stop simulation after initializing problem."
 
     from pylith.utils.DumpParametersJson import DumpParametersJson
     parameters = pythia.pyre.inventory.facility(
@@ -56,9 +55,8 @@ class PyLithApp(PetscApplication):
     mesher.meta['tip'] = "Generates or imports the computational mesh."
 
     from pylith.problems.TimeDependent import TimeDependent
-    problem = pythia.pyre.inventory.facility(
-        "problem", family="problem", factory=TimeDependent)
-    problem.meta['tip'] = "Computational problem to solve."
+    problem = pythia.pyre.inventory.facility("problem", family="problem", factory=TimeDependent)
+    problem.meta['tip'] = "Boundary value problem to solve."
 
     # PUBLIC METHODS /////////////////////////////////////////////////////
 
@@ -80,9 +78,9 @@ class PyLithApp(PetscApplication):
         self.parameters.preinitialize()
         self.parameters.write(self)
 
-        from pylith.mpi.Communicator import mpi_comm_world
-        comm = mpi_comm_world()
-        if 0 == comm.rank:
+        from pylith.mpi.Communicator import mpi_is_root, mpi_comm_world
+        if mpi_is_root():
+            comm = mpi_comm_world()
             self._info.log("Running on %d process(es)." % comm.size)
 
         from pylith.utils.profiling import resourceUsageString
@@ -147,7 +145,7 @@ class PyLithApp(PetscApplication):
         import pylith.utils.utils as utils
         v = utils.PylithVersion()
         verNum = v.version()
-        verYear = 2017
+        verYear = 2022
         verDOI = v.doi()
 
         software = ("@Manual{PyLith:software,\n"
@@ -166,7 +164,7 @@ class PyLithApp(PetscApplication):
                   "  organization = {Computational Infrastructure for Geodynamics (CIG)},\n"
                   "  address      = {University of California, Davis},\n"
                   "  year         = {%d},\n"
-                  "  note         = {http://www.geodynamics.org/cig/software/pylith/pylith\_manual-%s.pdf}\n"
+                  "  note         = {https://pylith.readthedocs.io/en/v%s}\n"
                   "}\n" % (verNum, verYear, verNum)
                   )
 
@@ -191,15 +189,11 @@ class PyLithApp(PetscApplication):
             "You will likely find other useful information while making progress on your original issue.\n"
             "\n"
             "Helpful Resources:\n"
-            "* User manual (https://geodynamics.org/cig/software/pylith/)\n"
-            "* PyLith Tutorials (https://wiki.geodynamics.org/software:pylith:start)\n"
+            "* User manual (https://pylith.readthedocs.io/)\n"
+            "* PyLith Tutorials (https://geodynamics.org/courses/PyLith)\n"
             "* pylithinfo script\n"
             "    Running pylithinfo --verbose [-o pylith_parameters.txt] [PyLith args]\n"
             "    will dump all parameters with descriptions to pylith_parameters.txt.\n"
-            "\n"
-            "Add $PYLITH_DIR/share/settings/petsc_monitor.cfg to your command line arguments\n"
-            "to turn on several PETSc monitors:"
-            "  pylith YOUR_FILE.cfg PATH_TO_PYITH_SHARE/share/settings/petsc_monitor.cfg\n"
             "\n"
             "If you still need help, visit the PyLith category on the CIG community forum:\n"
             "https://community.geodynamics.org.\n"
@@ -207,7 +201,7 @@ class PyLithApp(PetscApplication):
             "\n"
             "1. Describe what you are trying to do\n"
             "  a. Overview of the problem and boundary conditions (diagrams are very helpful)\n"
-            "  b. 2-D or 3-D\n"
+            "  b. 2D or 3D\n"
             "  c. Cell type (tri, quad, hex, or tet)\n"
             "  d. Type of fault: prescribed slip or spontaneous rupture\n"
             "2. Attach the PyLith parameters .json file\n"
@@ -221,15 +215,15 @@ class PyLithApp(PetscApplication):
         PetscApplication.showHelp(self)
 
         msg = (
-            "\nExamples using step01.cfg in directory examples/3d/hex8):\n"
+            "\nExamples using step01_axialdisp.cfg in directory examples/box-2d):\n"
             "1. List components and properties for a given component (--help)\n"
-            "  pylith step01.cfg --problem.bc.z_neg.help\n"
+            "  pylith step01_axialdisp.cfg --problem.bc.bc_xpos.help\n"
             "\n"
             "2. List components of a given component (--help-components)\n"
-            "  pylith step01.cfg --problem.bc.z_neg.help-components\n"
+            "  pylith step01_axialdisp.cfg --problem.bc.bc_xpos.help-components\n"
             "\n"
             "3. List properties of a given component (--help-properties)\n"
-            "  pylith step01.cfg --problem.bc.z_neg.help-properties\n"
+            "  pylith step01_axialdisp.cfg --problem.bc.bc_xpos.help-properties\n"
         )
         if self.inventory.usage:
             print(msg)

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -28,6 +28,26 @@
 #include "spatialdata/geocoords/CoordSys.hh" // USES CoordSys
 
 #include <cassert> // USES assert()
+
+namespace pylith {
+    namespace faults {
+        struct LiuCosConstants {
+            PylithReal tau;
+            PylithReal tau1;
+            PylithReal tau2;
+            PylithReal Cn;
+
+            LiuCosConstants(const PylithReal riseTime) :
+                tau(riseTime),
+                tau1(0.13 * tau),
+                tau2(tau - tau1),
+                Cn(M_PI /  (1.4 * M_PI * tau1 + 1.2 * tau1 + 0.3 * M_PI * tau2)) {}
+
+
+        }; // LiuCosConstants
+
+    } // faults
+} // pylith
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Default constructor.
@@ -82,10 +102,11 @@ pylith::faults::KinSrcLiuCos::slipFn(const PylithInt dim,
 
     if (t >= t0) {
         const PylithScalar tR = t - t0;
-        const PylithScalar tau = riseTime * 1.525;
-        const PylithScalar tau1 = 0.13 * tau;
-        const PylithScalar tau2 = tau - tau1;
-        const PylithScalar Cn = M_PI /  (1.4 * M_PI * tau1 + 1.2 * tau1 + 0.3 * M_PI * tau2);
+        const LiuCosConstants constants(riseTime);
+        const PylithScalar tau = constants.tau;
+        const PylithScalar tau1 = constants.tau1;
+        const PylithScalar tau2 = constants.tau2;
+        const PylithScalar Cn = constants.Cn;
 
         PylithScalar slipAmplitude = 0.0;
         if (tR <= tau1) {
@@ -104,7 +125,11 @@ pylith::faults::KinSrcLiuCos::slipFn(const PylithInt dim,
         for (PylithInt i = 0; i < dim; ++i) {
             slip[i] = finalSlip[i] * slipAmplitude;
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slip[i] = 0.0;
+        } // for
+    } // if/else
 } // slipFn
 
 
@@ -149,10 +174,11 @@ pylith::faults::KinSrcLiuCos::slipRateFn(const PylithInt dim,
 
     if (t >= t0) {
         const PylithScalar tR = t - t0;
-        const PylithScalar tau = riseTime * 1.525;
-        const PylithScalar tau1 = 0.13 * tau;
-        const PylithScalar tau2 = tau - tau1;
-        const PylithScalar Cn = M_PI /  (1.4 * M_PI * tau1 + 1.2 * tau1 + 0.3 * M_PI * tau2);
+        const LiuCosConstants constants(riseTime);
+        const PylithScalar tau = constants.tau;
+        const PylithScalar tau1 = constants.tau1;
+        const PylithScalar tau2 = constants.tau2;
+        const PylithScalar Cn = constants.Cn;
 
         PylithScalar slipRateAmplitude = 0.0;
         if (tR <= tau1) {
@@ -170,8 +196,83 @@ pylith::faults::KinSrcLiuCos::slipRateFn(const PylithInt dim,
         for (PylithInt i = 0; i < dim; ++i) {
             slipRate[i] = finalSlip[i] * slipRateAmplitude;
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipRate[i] = 0.0;
+        } // for
+    } // if/else
 } // slipRateFn
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Slip acceleration time function kernel.
+void
+pylith::faults::KinSrcLiuCos::slipAccFn(const PylithInt dim,
+                                        const PylithInt numS,
+                                        const PylithInt numA,
+                                        const PylithInt sOff[],
+                                        const PylithInt sOff_x[],
+                                        const PylithScalar s[],
+                                        const PylithScalar s_t[],
+                                        const PylithScalar s_x[],
+                                        const PylithInt aOff[],
+                                        const PylithInt aOff_x[],
+                                        const PylithScalar a[],
+                                        const PylithScalar a_t[],
+                                        const PylithScalar a_x[],
+                                        const PylithReal t,
+                                        const PylithScalar x[],
+                                        const PylithInt numConstants,
+                                        const PylithScalar constants[],
+                                        PylithScalar slipAcc[]) {
+    const PylithInt _numA = 3;
+
+    assert(_numA == numA);
+    assert(aOff);
+    assert(a);
+    assert(slipAcc);
+
+    const PylithInt i_initiationTime = 0;
+    const PylithInt i_finalSlip = 1;
+    const PylithInt i_riseTime = 2;
+    const PylithScalar initiationTime = a[aOff[i_initiationTime]];
+    const PylithScalar* finalSlip = &a[aOff[i_finalSlip]];
+    const PylithScalar riseTime = a[aOff[i_riseTime]];
+
+    const PylithInt i_originTime = 0;
+    const PylithScalar originTime = constants[i_originTime];
+    const PylithScalar t0 = originTime + initiationTime;
+
+    if (t >= t0) {
+        const PylithScalar tR = t - t0;
+        const LiuCosConstants constants(riseTime);
+        const PylithScalar tau = constants.tau;
+        const PylithScalar tau1 = constants.tau1;
+        const PylithScalar tau2 = constants.tau2;
+        const PylithScalar Cn = constants.Cn;
+
+        PylithScalar slipAccAmplitude = 0.0;
+        if (tR <= tau1) {
+            slipAccAmplitude = M_PI/tau1 * (0.7*sin(M_PI*tR/tau1) + 0.3*cos(0.5*M_PI*tR/tau1));
+            slipAccAmplitude *= Cn;
+        } else if (tR <= 2.0*tau1) {
+            slipAccAmplitude = M_PI/tau1 * 0.7*sin(M_PI*tR/tau1) - M_PI/tau2*0.3*sin(M_PI*(tR-tau1)/tau2);
+            slipAccAmplitude *= Cn;
+        } else if (tR <= tau) {
+            slipAccAmplitude = -M_PI/tau2 * 0.3*sin(M_PI*(tR-tau1)/tau2);
+            slipAccAmplitude *= Cn;
+        } else {
+            slipAccAmplitude = 0.0;
+        } // if
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipAcc[i] = finalSlip[i] * slipAccAmplitude;
+        } // for
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipAcc[i] = 0.0;
+        } // for
+    } // if/else
+} // slipAccFn
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -195,6 +296,7 @@ pylith::faults::KinSrcLiuCos::_auxiliaryFieldSetup(const spatialdata::units::Non
 
     _slipFnKernel = pylith::faults::KinSrcLiuCos::slipFn;
     _slipRateFnKernel = pylith::faults::KinSrcLiuCos::slipRateFn;
+    _slipAccFnKernel = pylith::faults::KinSrcLiuCos::slipAccFn;
 
     PYLITH_METHOD_END;
 } // _auxiliaryFieldSetup

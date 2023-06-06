@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -92,6 +92,7 @@ pylith::meshio::FieldFactory::addVector(const pylith::topology::FieldBase::Discr
 // Add tensor field.
 void
 pylith::meshio::FieldFactory::addTensor(const pylith::topology::FieldBase::Discretization& discretization) {
+    PYLITH_METHOD_BEGIN;
     const char* fieldName = "tensor";
 
     const int spaceDim = _field.getSpaceDim();
@@ -132,6 +133,7 @@ pylith::meshio::FieldFactory::addTensor(const pylith::topology::FieldBase::Discr
 // Add other field.
 void
 pylith::meshio::FieldFactory::addOther(const pylith::topology::FieldBase::Discretization& discretization) {
+    PYLITH_METHOD_BEGIN;
     const char* fieldName = "other";
     const int otherSize = 2;
     const char* componentNames[otherSize] = { "other_1", "other_2" };

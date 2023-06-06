@@ -2,43 +2,34 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/topology/Field.py
-#
-# @brief Python object for managing a vector field over vertices or
-# cells of a finite-element mesh.
 
 from .topology import Field as ModuleField
 
 
 class Field(ModuleField):
-    """Python object for managing a vector field over vertices or cells of
-    a finite-element mesh.
     """
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    Vector field over the simulation domain or a piece of the domain.
+    """
 
     def __init__(self, mesh):
         """Constructor.
         """
         ModuleField.__init__(self, mesh)
-        return
 
     def cleanup(self):
         """Deallocate PETSc and local data structures.
         """
         self.deallocate()
-        return
 
 
 # End of file

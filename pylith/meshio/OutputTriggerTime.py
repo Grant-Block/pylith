@@ -2,30 +2,37 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/meshio/OutputTriggerTime.py
-#
-# @brief Python class for defining how often output is written in terms of elapsed time.
-#
-# Factory: output_manager
 
 from .OutputTrigger import OutputTrigger
 from .meshio import OutputTriggerTime as ModuleOutputTriggerTime
 
 
 class OutputTriggerTime(OutputTrigger, ModuleOutputTriggerTime):
-    """Python class for defining how often output is writtern in terms of elaspsed time.
     """
+    Define how often output is written in terms of elasped simulation time.
+
+    :::{tip}
+    Due to floating point roundoff, it is usually a good idea to use a value that is a fraction of a time step smaller than the desired value.
+    :::
+
+    Implements `OutputTrigger`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [output_trigger]
+            elapsed_time = 0.9999*year
+        """
+    }
 
     import pythia.pyre.inventory
 
@@ -33,13 +40,10 @@ class OutputTriggerTime(OutputTrigger, ModuleOutputTriggerTime):
     timeSkip = pythia.pyre.inventory.dimensional("elapsed_time", default=0.0*s)
     timeSkip.meta['tip'] = "Elapsed time between writes."
 
-    # PUBLIC METHODS /////////////////////////////////////////////////////
-
     def __init__(self, name="outputtriggertime"):
         """Constructor.
         """
         OutputTrigger.__init__(self, name)
-        return
 
     def preinitialize(self):
         """Setup output trigger.
@@ -47,15 +51,11 @@ class OutputTriggerTime(OutputTrigger, ModuleOutputTriggerTime):
         ModuleOutputTriggerTime.__init__(self)
         ModuleOutputTriggerTime.setIdentifier(self, self.aliases[-1])
         ModuleOutputTriggerTime.setTimeSkip(self, self.timeSkip)
-        return
-
-    # PRIVATE METHODS ////////////////////////////////////////////////////
 
     def _configure(self):
         """Set members based using inventory.
         """
         OutputTrigger._configure(self)
-        return
 
 # FACTORIES ////////////////////////////////////////////////////////////
 

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -69,19 +69,6 @@ pylith::meshio::TestMeshIOCubit::testConstructor(void) {
 
 
 // ----------------------------------------------------------------------
-// Test debug()
-void
-pylith::meshio::TestMeshIOCubit::testDebug(void) {
-    PYLITH_METHOD_BEGIN;
-
-    CPPUNIT_ASSERT(_io);
-    _testDebug(*_io);
-
-    PYLITH_METHOD_END;
-} // testDebug
-
-
-// ----------------------------------------------------------------------
 // Test filename()
 void
 pylith::meshio::TestMeshIOCubit::testFilename(void) {
@@ -89,9 +76,9 @@ pylith::meshio::TestMeshIOCubit::testFilename(void) {
 
     CPPUNIT_ASSERT(_io);
 
-    const char* filename = "hi.txt";
-    _io->filename(filename);
-    CPPUNIT_ASSERT(0 == strcasecmp(filename, _io->filename()));
+    const std::string& filename = "hi.txt";
+    _io->setFilename(filename.c_str());
+    CPPUNIT_ASSERT_EQUAL(filename, std::string(_io->getFilename()));
 
     PYLITH_METHOD_END;
 } // testFilename
@@ -106,12 +93,17 @@ pylith::meshio::TestMeshIOCubit::testRead(void) {
     CPPUNIT_ASSERT(_io);
     CPPUNIT_ASSERT(_data);
 
-    _io->filename(_data->filename);
-    _io->useNodesetNames(true);
+    _io->setFilename(_data->filename);
+    _io->setUseNodesetNames(true);
 
     // Read mesh
     delete _mesh;_mesh = new topology::Mesh;CPPUNIT_ASSERT(_mesh);
     _io->read(_mesh);
+
+    pythia::journal::debug_t debug("TestMeshIOCubit");
+    if (debug.state()) {
+        _mesh->view();
+    } // if
 
     // Make sure mesh matches data
     _checkVals();

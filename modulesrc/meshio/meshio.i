@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -24,6 +24,7 @@
 #include "pylith/meshio/MeshIO.hh"
 #include "pylith/meshio/MeshIOAscii.hh"
 #include "pylith/meshio/MeshIOLagrit.hh"
+#include "pylith/meshio/MeshIOPetsc.hh"
 #if defined(ENABLE_CUBIT)
 #include "pylith/meshio/MeshIOCubit.hh"
 #endif
@@ -77,6 +78,7 @@ import_array();
 %include "MeshIOObj.i"
 %include "MeshIOAscii.i"
 %include "MeshIOLagrit.i"
+%include "MeshIOPetsc.i"
 #if defined(ENABLE_CUBIT)
 %include "MeshIOCubit.i"
 #endif

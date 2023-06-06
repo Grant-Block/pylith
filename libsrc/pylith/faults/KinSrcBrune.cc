@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -29,19 +29,33 @@
 
 #include <cassert> // USES assert()
 
-// ---------------------------------------------------------------------------------------------------------------------
+namespace pylith {
+    namespace faults {
+        namespace _KinSrcBrune {
+            inline
+            PylithReal
+            tau(const PylithReal riseTime) {
+                return 0.21081916 * riseTime;
+            } // tau
+
+
+        } // _KinSrcBrune
+    } // faults
+} // pylith
+
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::faults::KinSrcBrune::KinSrcBrune(void) {
     pylith::utils::PyreComponent::setName("kinsrcbrune");
 } // constructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::faults::KinSrcBrune::~KinSrcBrune(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Slip time function kernel.
 void
 pylith::faults::KinSrcBrune::slipFn(const PylithInt dim,
@@ -81,15 +95,19 @@ pylith::faults::KinSrcBrune::slipFn(const PylithInt dim,
     const PylithScalar t0 = originTime + initiationTime;
 
     if (t >= t0) {
-        const PylithScalar tau = 0.21081916 * riseTime;
+        const PylithScalar tau = _KinSrcBrune::tau(riseTime);
         for (PylithInt i = 0; i < dim; ++i) {
             slip[i] = finalSlip[i] * (1.0 - exp(-(t-t0)/tau) * (1.0 + (t-t0)/tau));
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slip[i] = 0.0;
+        } // for
+    } // if/else
 } // slipFn
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Slip rate time function kernel.
 void
 pylith::faults::KinSrcBrune::slipRateFn(const PylithInt dim,
@@ -129,15 +147,71 @@ pylith::faults::KinSrcBrune::slipRateFn(const PylithInt dim,
     const PylithScalar t0 = originTime + initiationTime;
 
     if (t >= t0) {
-        const PylithScalar tau = 0.21081916 * riseTime;
+        const PylithScalar tau = _KinSrcBrune::tau(riseTime);
         for (PylithInt i = 0; i < dim; ++i) {
-            slipRate[i] = finalSlip[i] * 1.0/tau * exp(-(t-t0)/tau) * (2.0 - (t-t0)/tau);
+            slipRate[i] = finalSlip[i] * (t-t0)/(tau*tau) * exp(-(t-t0)/tau);
         } // for
-    } // if
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipRate[i] = 0.0;
+        } // for
+    } // if/else
 } // slipRateFn
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Slip acceleration time function kernel.
+void
+pylith::faults::KinSrcBrune::slipAccFn(const PylithInt dim,
+                                       const PylithInt numS,
+                                       const PylithInt numA,
+                                       const PylithInt sOff[],
+                                       const PylithInt sOff_x[],
+                                       const PylithScalar s[],
+                                       const PylithScalar s_t[],
+                                       const PylithScalar s_x[],
+                                       const PylithInt aOff[],
+                                       const PylithInt aOff_x[],
+                                       const PylithScalar a[],
+                                       const PylithScalar a_t[],
+                                       const PylithScalar a_x[],
+                                       const PylithReal t,
+                                       const PylithScalar x[],
+                                       const PylithInt numConstants,
+                                       const PylithScalar constants[],
+                                       PylithScalar slipAcc[]) {
+    const PylithInt _numA = 3;
+
+    assert(_numA == numA);
+    assert(aOff);
+    assert(a);
+    assert(slipAcc);
+
+    const PylithInt i_initiationTime = 0;
+    const PylithInt i_finalSlip = 1;
+    const PylithInt i_riseTime = 2;
+    const PylithScalar initiationTime = a[aOff[i_initiationTime]];
+    const PylithScalar* finalSlip = &a[aOff[i_finalSlip]];
+    const PylithScalar riseTime = a[aOff[i_riseTime]];
+
+    const PylithInt i_originTime = 0;
+    const PylithScalar originTime = constants[i_originTime];
+    const PylithScalar t0 = originTime + initiationTime;
+
+    if (t >= t0) {
+        const PylithScalar tau = _KinSrcBrune::tau(riseTime);
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipAcc[i] = finalSlip[i] * 1.0/(tau*tau) * (1.0 - (t-t0)/tau) * exp(-(t-t0)/tau);
+        } // for
+    } else {
+        for (PylithInt i = 0; i < dim; ++i) {
+            slipAcc[i] = 0.0;
+        } // for
+    } // if/else
+} // slipAccFn
+
+
+// ------------------------------------------------------------------------------------------------
 // Preinitialize earthquake source. Set names/sizes of auxiliary subfields.
 void
 pylith::faults::KinSrcBrune::_auxiliaryFieldSetup(const spatialdata::units::Nondimensional& normalizer,
@@ -149,7 +223,8 @@ pylith::faults::KinSrcBrune::_auxiliaryFieldSetup(const spatialdata::units::Nond
     assert(cs);
     _auxiliaryFactory->initialize(_auxiliaryField, normalizer, cs->getSpaceDim());
 
-    // :ATTENTION: The order for adding subfields must match the order of the auxiliary fields in the slip time function
+    // :ATTENTION: The order for adding subfields must match the order of the auxiliary fields in the slip time
+    // function
     // kernel.
 
     _auxiliaryFactory->addInitiationTime(); // 0

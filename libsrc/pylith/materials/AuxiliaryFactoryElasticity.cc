@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -28,23 +28,24 @@
 #include "spatialdata/units/Nondimensional.hh" // USES Nondimensional
 #include "spatialdata/spatialdb/GravityField.hh" // USES GravityField
 
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL*
 
 #include <cassert>
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::materials::AuxiliaryFactoryElasticity::AuxiliaryFactoryElasticity(void) {
     GenericComponent::setName("auxiliaryfactoryelasticity");
 } // constructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::materials::AuxiliaryFactoryElasticity::~AuxiliaryFactoryElasticity(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add density subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryElasticity::addDensity(void) {
@@ -71,7 +72,7 @@ pylith::materials::AuxiliaryFactoryElasticity::addDensity(void) {
 } // addDensity
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add body force subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryElasticity::addBodyForce(void) {
@@ -102,7 +103,7 @@ pylith::materials::AuxiliaryFactoryElasticity::addBodyForce(void) {
 } // addBodyForce
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add gravity subfield to auxiliary fields.
 void
 pylith::materials::AuxiliaryFactoryElasticity::addGravityField(spatialdata::spatialdb::GravityField* gf) {

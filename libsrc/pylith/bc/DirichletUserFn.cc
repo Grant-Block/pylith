@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -137,7 +137,7 @@ pylith::bc::DirichletUserFn::verifyConfiguration(const pylith::topology::Field& 
         throw std::runtime_error(msg.str());
     } // if
 
-    const topology::Field::SubfieldInfo& info = solution.subfieldInfo(_subfieldName.c_str());
+    const topology::Field::SubfieldInfo& info = solution.getSubfieldInfo(_subfieldName.c_str());
     const int numComponents = info.description.numComponents;
     const int numConstrained = _constrainedDOF.size();
     for (int iConstrained = 0; iConstrained < numConstrained; ++iConstrained) {
@@ -166,20 +166,24 @@ pylith::bc::DirichletUserFn::createIntegrator(const pylith::topology::Field& sol
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Create constraint and set kernels.
-pylith::feassemble::Constraint*
-pylith::bc::DirichletUserFn::createConstraint(const pylith::topology::Field& solution) {
+std::vector<pylith::feassemble::Constraint*>
+pylith::bc::DirichletUserFn::createConstraints(const pylith::topology::Field& solution) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_COMPONENT_DEBUG("createConstraint(solution="<<solution.getLabel()<<")");
+    PYLITH_COMPONENT_DEBUG("createConstraints(solution="<<solution.getLabel()<<")");
 
+    std::vector<pylith::feassemble::Constraint*> constraintArray;
     pylith::feassemble::ConstraintUserFn* constraint = new pylith::feassemble::ConstraintUserFn(this);assert(constraint);
-    constraint->setMarkerLabel(getMarkerLabel());
-    constraint->setConstrainedDOF(&_constrainedDOF[0], _constrainedDOF.size());
     constraint->setSubfieldName(_subfieldName.c_str());
+    constraint->setLabelName(getLabelName());
+    constraint->setLabelValue(getLabelValue());
+    constraint->setConstrainedDOF(&_constrainedDOF[0], _constrainedDOF.size());
     constraint->setUserFn(_fn);
     constraint->setUserFnDot(_fnDot);
 
-    PYLITH_METHOD_RETURN(constraint);
-} // createConstraint
+    constraintArray.resize(1);
+    constraintArray[0] = constraint;
+    PYLITH_METHOD_RETURN(constraintArray);
+} // createConstraints
 
 
 // ---------------------------------------------------------------------------------------------------------------------

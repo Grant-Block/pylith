@@ -2,57 +2,61 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
-# @file pylith/topology/MeshImporter.py
-#
-# @brief Python implementation of importing a mesh.
-#
-# Factory: mesh_generator.
 
 from .MeshGenerator import MeshGenerator
 
 
 class MeshImporter(MeshGenerator):
-    """Python implementation of importing a mesh.
-
-    FACTORY: mesh_generator.
     """
+    Base class for reading a finite-element mesh from files.
+
+    Implements `MeshGenerator`.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [pylithapp.meshimporter]
+            reorder_mesh = True
+            check_topology = True
+            reader = pylith.meshio.MeshIOCubit
+            refiner = pylith.topology.RefineUniform
+        """
+    }
 
     import pythia.pyre.inventory
 
     reorderMesh = pythia.pyre.inventory.bool("reorder_mesh", default=True)
     reorderMesh.meta['tip'] = "Reorder mesh using reverse Cuthill-McKee."
 
+    checkTopology = pythia.pyre.inventory.bool("check_topology", default=True)
+    checkTopology.meta['tip'] = "Check topology of imported mesh."
+
     from pylith.meshio.MeshIOAscii import MeshIOAscii
     reader = pythia.pyre.inventory.facility("reader", family="mesh_io", factory=MeshIOAscii)
-    reader.meta['tip'] = "Mesh reader."
+    reader.meta['tip'] = "Reader for mesh files."
 
     from .Distributor import Distributor
     distributor = pythia.pyre.inventory.facility("distributor", family="mesh_distributor", factory=Distributor)
-    distributor.meta['tip'] = "Mesh distributor."
+    distributor.meta['tip'] = "Distributes mesh among processes."
 
     from .MeshRefiner import MeshRefiner
     refiner = pythia.pyre.inventory.facility("refiner", family="mesh_refiner", factory=MeshRefiner)
-    refiner.meta['tip'] = "Mesh refiner."
-
-    # PUBLIC METHODS /////////////////////////////////////////////////////
+    refiner.meta['tip'] = "Performs uniform global mesh refinement after distribution among processes (default is no refinement)."
 
     def __init__(self, name="meshimporter"):
         """Constructor.
         """
         MeshGenerator.__init__(self, name)
         self._loggingPrefix = "MeIm "
-        return
 
     def preinitialize(self, problem):
         """Do minimal initialization.
@@ -62,30 +66,27 @@ class MeshImporter(MeshGenerator):
         self.reader.preinitialize()
         self.distributor.preinitialize()
         self.refiner.preinitialize()
-        return
 
     def create(self, problem, faults=None):
         """Hook for creating mesh.
         """
         from pylith.utils.profiling import resourceUsageString
-        from pylith.mpi.Communicator import petsc_comm_world
-        comm = petsc_comm_world()
+        from pylith.mpi.Communicator import mpi_is_root
+        isRoot = mpi_is_root()
 
         self._setupLogging()
         logEvent = "%screate" % self._loggingPrefix
         self._eventLogger.eventBegin(logEvent)
 
         # Read mesh
-        mesh = self.reader.read(self.debug)
-        if self.debug:
-            mesh.view()
+        mesh = self.reader.read(self.checkTopology)
 
         # Reorder mesh
         if self.reorderMesh:
             logEvent2 = "%sreorder" % self._loggingPrefix
             self._eventLogger.eventBegin(logEvent2)
             self._debug.log(resourceUsageString())
-            if 0 == comm.rank:
+            if isRoot:
                 self._info.log("Reordering cells and vertices.")
             from pylith.topology.ReverseCuthillMcKee import ReverseCuthillMcKee
             ordering = ReverseCuthillMcKee()
@@ -94,18 +95,17 @@ class MeshImporter(MeshGenerator):
 
         # Adjust topology
         self._debug.log(resourceUsageString())
-        if 0 == comm.rank:
+        if isRoot:
             self._info.log("Adjusting topology.")
         self._adjustTopology(mesh, faults, problem)
 
         # Distribute mesh
+        from pylith.mpi.Communicator import mpi_comm_world
+        comm = mpi_comm_world()
         if comm.size > 1:
-            if 0 == comm.rank:
+            if isRoot:
                 self._info.log("Distributing mesh.")
-            self.distributor.initialize()
-            mesh = self.distributor.distribute(mesh, problem.normalizer)
-            if self.debug:
-                mesh.view()
+            mesh = self.distributor.distribute(mesh, problem)
             mesh.memLoggingStage = "DistributedMesh"
 
         # Refine mesh (if necessary)
@@ -124,20 +124,16 @@ class MeshImporter(MeshGenerator):
         self._eventLogger.eventEnd(logEvent)
         return newMesh
 
-    # PRIVATE METHODS ////////////////////////////////////////////////////
-
     def _configure(self):
         """Set members based on inventory.
         """
         MeshGenerator._configure(self)
-        return
 
     def _setupLogging(self):
         """Setup event logging.
         """
         MeshGenerator._setupLogging(self)
         self._eventLogger.registerEvent("%sreorder" % self._loggingPrefix)
-        return
 
 
 # FACTORIES ////////////////////////////////////////////////////////////

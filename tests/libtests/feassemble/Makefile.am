@@ -4,21 +4,19 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
 
-subpackage = feassemble
-include $(top_srcdir)/subpackage.am
-include $(top_srcdir)/check.am
+include $(top_srcdir)/tests/check_cppunit.am
 
 SUBDIRS = data
 
@@ -29,28 +27,16 @@ check_PROGRAMS = test_feassemble
 # Primary source files
 test_feassemble_SOURCES = \
 	TestAuxiliaryFactory.cc \
-	test_driver.cc
+	TestInterfacePatches.cc \
+	TestInterfacePatches_Cases.cc \
+	$(top_srcdir)/tests/src/FaultCohesiveStub.cc \
+	$(top_srcdir)/tests/src/StubMethodTracker.cc \
+	$(top_srcdir)/tests/src/driver_cppunit.cc
 
 
-noinst_HEADERS =
-	TestAuxiliaryFactory.hh
-
-AM_CPPFLAGS += \
-	$(PETSC_CC_INCLUDES) \
-	-I$(PYTHON_INCDIR) $(PYTHON_EGG_CPPFLAGS)
-
-test_feassemble_LDFLAGS = \
-	$(AM_LDFLAGS) $(PYTHON_LA_LDFLAGS)
-
-test_feassemble_LDADD = \
-	-lcppunit -ldl \
-	$(top_builddir)/libsrc/pylith/libpylith.la \
-	-lspatialdata \
-	$(PETSC_LIB) $(PYTHON_BLDLIBRARY) $(PYTHON_LIBS) $(PYTHON_SYSLIBS)
-
-if ENABLE_CUBIT
-  test_feassemble_LDADD += -lnetcdf
-endif
+dist_noinst_HEADERS = \
+	TestAuxiliaryFactory.hh \
+	TestInterfacePatches.hh
 
 
 # End of file

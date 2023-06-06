@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -75,20 +75,6 @@ pylith::meshio::TestMeshIOLagrit::testConstructor(void) {
 
 
 // ----------------------------------------------------------------------
-// Test debug()
-void
-pylith::meshio::TestMeshIOLagrit::testDebug(void) {
-    PYLITH_METHOD_BEGIN;
-
-    CPPUNIT_ASSERT(_io);
-
-    _testDebug(*_io);
-
-    PYLITH_METHOD_END;
-} // testDebug
-
-
-// ----------------------------------------------------------------------
 // Test filename()
 void
 pylith::meshio::TestMeshIOLagrit::testFilename(void) {
@@ -98,11 +84,11 @@ pylith::meshio::TestMeshIOLagrit::testFilename(void) {
 
     const char* filenameGmv = "hi.txt";
     const char* filenamePset = "hi2.txt";
-    _io->filenameGmv(filenameGmv);
-    _io->filenamePset(filenamePset);
+    _io->setFilenameGmv(filenameGmv);
+    _io->setFilenamePset(filenamePset);
 
-    CPPUNIT_ASSERT(0 == strcasecmp(filenameGmv, _io->filenameGmv()));
-    CPPUNIT_ASSERT(0 == strcasecmp(filenamePset, _io->filenamePset()));
+    CPPUNIT_ASSERT(0 == strcasecmp(filenameGmv, _io->getFilenameGmv()));
+    CPPUNIT_ASSERT(0 == strcasecmp(filenamePset, _io->getFilenamePset()));
 
     PYLITH_METHOD_END;
 } // testFilename
@@ -117,17 +103,17 @@ pylith::meshio::TestMeshIOLagrit::testRead(void) {
     CPPUNIT_ASSERT(_io);
     CPPUNIT_ASSERT(_data);
 
-    _io->filenameGmv(_data->filenameGmv);
-    _io->filenamePset(_data->filenamePset);
-    _io->ioInt32(_data->ioInt32);
-    _io->isRecordHeader32Bit(_data->isRecordHeader32Bit);
+    _io->setFilenameGmv(_data->filenameGmv);
+    _io->setFilenamePset(_data->filenamePset);
+    _io->setIOInt32(_data->ioInt32);
+    _io->setIsRecordHeader32Bit(_data->isRecordHeader32Bit);
 
     // LaGriT file was created on little endian machine, so flip endian if
     // running test on big endian machine.
 #if defined(NATIVE_LITTLE_ENDIAN)
-    _io->flipEndian(false);
+    _io->setFlipEndian(false);
 #else
-    _io->flipEndian(true);
+    _io->setFlipEndian(true);
 #endif
 
     // Read mesh

@@ -4,14 +4,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2019 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 
@@ -29,13 +29,34 @@ endif
 
 DIST_SUBDIRS = $(SUBDIRS) \
 	examples \
-	doc \
+	developer \
+	docs \
+	release-notes \
 	templates \
 	share
 
+dist_noinst_PYTHON = \
+	applications/pylith \
+	applications/pylith_cfgsearch \
+	applications/pylith_dumpparameters \
+	applications/pylith_eqinfo \
+	applications/pylith_genxdmf \
+	applications/pylith_runner \
+	applications/pylith_powerlaw_gendb
+
+
 EXTRA_DIST = \
-	CHANGES \
-	DEPENDENCIES
+	AUTHORS \
+	CHANGES.md \
+	DEPENDENCIES \
+	INSTALL \
+	LICENSE.md \
+	NEWS \
+	README.md \
+	setup.cfg \
+	setup.py \
+	docker/pylith-testenv \
+	docker/pylith-docenv
 
 
 if ENABLE_TEST_COVERAGE

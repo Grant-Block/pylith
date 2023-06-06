@@ -2,14 +2,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -21,6 +21,7 @@
 %{
 #include "pylith/faults/FaultCohesive.hh"
 #include "pylith/faults/FaultCohesiveKin.hh"
+#include "pylith/faults/FaultCohesiveImpulses.hh"
 #include "pylith/faults/KinSrc.hh"
 #include "pylith/faults/KinSrcStep.hh"
 #include "pylith/faults/KinSrcRamp.hh"
@@ -59,6 +60,7 @@ import_array();
 
 %include "FaultCohesive.i"
 %include "FaultCohesiveKin.i"
+%include "FaultCohesiveImpulses.i"
 %include "KinSrc.i"
 %include "KinSrcStep.i"
 %include "KinSrcRamp.i"

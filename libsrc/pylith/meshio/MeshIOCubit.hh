@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -48,19 +48,19 @@ public:
      *
      * @param filename Name of file
      */
-    void filename(const char* name);
+    void setFilename(const char* name);
 
     /** Get filename of Cubit file.
      *
      * @returns Name of file
      */
-    const char* filename(void) const;
+    const char* getFilename(void) const;
 
     /** Set flag on whether to use nodeset ids or names.
      *
      * @param flag True to use node set names.
      */
-    void useNodesetNames(const bool flag);
+    void setUseNodesetNames(const bool flag);
 
     // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////////////
 protected:

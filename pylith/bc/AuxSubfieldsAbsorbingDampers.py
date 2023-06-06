@@ -2,14 +2,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2016 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -21,10 +21,17 @@ from pylith.utils.PetscComponent import PetscComponent
 
 
 class AuxSubfieldsAbsorbingDampers(PetscComponent):
-    """Python container for isotropic, linear elasticity subfields.
-
-    FACTORY: auxiliary_subfields
     """
+    Auxiliary subfields for the absorbing dampers boundary condition.
+    """
+    DOC_CONFIG = {
+        "cfg": """
+            [absorbing_dampers_auxiliary_subfields]
+            density.basis_order = 0
+            vp.basis_order = 0
+            vs.basis_order = 0            
+            """,
+    }
 
     import pythia.pyre.inventory
 

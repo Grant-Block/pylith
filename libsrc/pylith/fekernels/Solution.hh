@@ -4,14 +4,14 @@
  *
  * Brad T. Aagaard, U.S. Geological Survey
  * Charles A. Williams, GNS Science
- * Matthew G. Knepley, University of Chicago
+ * Matthew G. Knepley, University at Buffalo
  *
  * This code was developed as part of the Computational Infrastructure
  * for Geodynamics (http:*geodynamics.org).
  *
- * Copyright (c) 2010-2015 University of California, Davis
+ * Copyright (c) 2010-2022 University of California, Davis
  *
- * See COPYING for license information.
+ * See LICENSE.md for license information.
  *
  * ----------------------------------------------------------------------
  */
@@ -28,6 +28,8 @@
 #include "fekernelsfwd.hh" // forward declarations
 
 #include "pylith/utils/types.hh"
+
+#include <cassert> // USES assert()
 
 class pylith::fekernels::Solution {
     // PUBLIC MEMBERS ///////////////////////////////////////////////////////
@@ -59,7 +61,7 @@ public:
      *
      * We pass through the solution to the resulting field. The auxiliary field is ignored.
      */
-    static
+    static inline
     void passThruSubfield(const PylithInt dim,
                           const PylithInt numS,
                           const PylithInt numA,
@@ -77,7 +79,17 @@ public:
                           const PylithScalar x[],
                           const PylithInt numConstants,
                           const PylithScalar constants[],
-                          PylithScalar field[]);
+                          PylithScalar field[]) {
+        assert(s);
+        assert(sOff);
+        assert(field);
+        const PetscInt subfieldIndex = PetscInt(t); // :KLUDGE: Easiest way to get subfield to extract into fn.
+
+        const PylithInt sEnd = sOff[subfieldIndex+1];
+        for (PylithInt iS = sOff[subfieldIndex], iF = 0; iS < sEnd; ++iS, ++iF) {
+            field[iF] = s[iS];
+        } // for
+    } // passThruSubfield
 
 }; // Solution
 

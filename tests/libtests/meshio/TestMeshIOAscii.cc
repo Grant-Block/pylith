@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -69,20 +69,6 @@ pylith::meshio::TestMeshIOAscii::testConstructor(void) {
 
 
 // ----------------------------------------------------------------------
-// Test debug()
-void
-pylith::meshio::TestMeshIOAscii::testDebug(void) {
-    PYLITH_METHOD_BEGIN;
-
-    CPPUNIT_ASSERT(_io);
-
-    _testDebug(*_io);
-
-    PYLITH_METHOD_END;
-} // testDebug
-
-
-// ----------------------------------------------------------------------
 // Test filename()
 void
 pylith::meshio::TestMeshIOAscii::testFilename(void) {
@@ -90,9 +76,9 @@ pylith::meshio::TestMeshIOAscii::testFilename(void) {
 
     CPPUNIT_ASSERT(_io);
 
-    const char* filename = "hi.txt";
-    _io->filename(filename);
-    CPPUNIT_ASSERT(0 == strcasecmp(filename, _io->filename()));
+    const std::string& filename = "hi.txt";
+    _io->setFilename(filename.c_str());
+    CPPUNIT_ASSERT_EQUAL(filename, std::string(_io->getFilename()));
 
     PYLITH_METHOD_END;
 } // testFilename
@@ -111,7 +97,7 @@ pylith::meshio::TestMeshIOAscii::testWriteRead(void) {
 
     // Write mesh
     CPPUNIT_ASSERT(_data->filename);
-    _io->filename(_data->filename);
+    _io->setFilename(_data->filename);
     _io->write(_mesh);
 
     // Read mesh
@@ -137,7 +123,7 @@ pylith::meshio::TestMeshIOAscii::testRead(void) {
     // Read mesh
     delete _mesh;_mesh = new pylith::topology::Mesh;
     CPPUNIT_ASSERT(_data->filename);
-    _io->filename(_data->filename);
+    _io->setFilename(_data->filename);
     _io->read(_mesh);
 
     // Make sure mesh matches data

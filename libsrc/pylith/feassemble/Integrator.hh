@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, Rice University
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2018 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -36,17 +36,14 @@
 class pylith::feassemble::Integrator : public pylith::feassemble::PhysicsImplementation {
     friend class TestIntegrator; // unit testing
 
-    // PUBLIC ENUM /////////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC ENUM ////////////////////////////////////////////////////////////////////////////////
 public:
 
-    enum ResidualPart {
-        RESIDUAL_LHS=0, // LHS residual.
-        RESIDUAL_RHS=1, // RHS residual.
-    };
-
-    enum JacobianPart {
-        JACOBIAN_LHS=0, // LHS Jacobian.
-        JACOBIAN_LHS_LUMPED_INV=1, // Inverse of LHS lumped Jacobian.
+    enum EquationPart {
+        LHS=0,
+        RHS=1,
+        LHS_LUMPED_INV=2,
+        LHS_WEIGHTED=3,
     };
 
     enum NewJacobianTriggers {
@@ -56,7 +53,7 @@ public:
         NEW_JACOBIAN_UPDATE_STATE_VARS=0x4, // Needs new Jacobian after updating state variables.
     };
 
-    // PUBLIC MEMBERS //////////////////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC MEMBERS /////////////////////////////////////////////////////////////////////////////
 public:
 
     /** Constructor
@@ -138,76 +135,52 @@ public:
                   const PylithReal dt,
                   const pylith::topology::Field& solution);
 
-    /** Update auxiliary field values to current time.
+    /** Set auxiliary field values for current time.
      *
      * @param[in] t Current time.
      */
     virtual
-    void updateState(const PylithReal t);
+    void setState(const PylithReal t);
 
     /** Compute RHS residual for G(t,s).
      *
      * @param[out] residual Field for residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     virtual
     void computeRHSResidual(pylith::topology::Field* residual,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const pylith::topology::Field& solution) = 0;
+                            const pylith::feassemble::IntegrationData& integrationData) = 0;
 
     /** Compute LHS residual for F(t,s,\dot{s}).
      *
      * @param[out] residual Field for residual.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     virtual
     void computeLHSResidual(pylith::topology::Field* residual,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const pylith::topology::Field& solution,
-                            const pylith::topology::Field& solutionDot) = 0;
+                            const pylith::feassemble::IntegrationData& integrationData) = 0;
 
     /** Compute LHS Jacobian and preconditioner for F(t,s,\dot{s}) with implicit time-stepping.
      *
      * @param[out] jacobianMat PETSc Mat with Jacobian sparse matrix.
      * @param[out] precondMat PETSc Mat with Jacobian preconditioning sparse matrix.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
-     * @param[in] solutionDot Field with time derivative of current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     virtual
     void computeLHSJacobian(PetscMat jacobianMat,
                             PetscMat precondMat,
-                            const PylithReal t,
-                            const PylithReal dt,
-                            const PylithReal s_tshift,
-                            const pylith::topology::Field& solution,
-                            const pylith::topology::Field& solutionDot) = 0;
+                            const pylith::feassemble::IntegrationData& integrationData) = 0;
 
     /** Compute inverse of lumped LHS Jacobian for F(t,s,\dot{s}) with explicit time-stepping.
      *
      * @param[out] jacobianInv Inverse of lumped Jacobian as a field.
-     * @param[in] t Current time.
-     * @param[in] dt Current time step.
-     * @param[in] s_tshift Scale for time derivative.
-     * @param[in] solution Field with current trial solution.
+     * @param[in] integrationData Data needed to integrate governing equations.
      */
     virtual
     void computeLHSJacobianLumpedInv(pylith::topology::Field* jacobianInv,
-                                     const PylithReal t,
-                                     const PylithReal dt,
-                                     const PylithReal s_tshift,
-                                     const pylith::topology::Field& solution) = 0;
+                                     const pylith::feassemble::IntegrationData& integrationData) = 0;
 
-    // PROTECTED METHODS ///////////////////////////////////////////////////////////////////////////////////////////////
+    // PROTECTED METHODS //////////////////////////////////////////////////////////////////////////
 protected:
 
     /** Set constants used in finite-element kernels.
@@ -241,7 +214,7 @@ protected:
                               const PylithReal dt,
                               const pylith::topology::Field& solution);
 
-    // PROTECTED MEMBERS ///////////////////////////////////////////////////////////////////////////////////////////////
+    // PROTECTED MEMBERS //////////////////////////////////////////////////////////////////////////
 protected:
 
     std::string _labelName; ///< Name of label associated with integration domain.
@@ -250,12 +223,18 @@ protected:
     int _lhsJacobianTriggers; // Triggers for needing new LHS Jacobian.
     int _lhsJacobianLumpedTriggers; // Triggers for needing new LHS lumped Jacobian.
 
+    /// True if we have kernels for operation, false otherwise.
+    bool _hasRHSResidual;
+    bool _hasLHSResidual;
+    bool _hasLHSJacobian;
+    bool _hasLHSJacobianLumped;
+
     /// True if we need to recompute Jacobian for operator, false otherwise.
     /// Default is false;
     bool _needNewLHSJacobian;
     bool _needNewLHSJacobianLumped;
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     Integrator(void); /// Not implemented.

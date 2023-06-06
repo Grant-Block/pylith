@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -31,6 +31,7 @@
 #include "pylith/utils/types.hh" // USES PylithReal, PylithInt
 
 class pylith::problems::ObserverSoln {
+    friend ObserversSoln; ///< Access to ordering index.
     friend class TestObserverSoln; // unit testing
 
     // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +73,12 @@ public:
                 const PylithInt tindex,
                 const pylith::topology::Field& solution) = 0;
 
-    // NOT IMPLEMENTED /////////////////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE ////////////////////////////////////////////////////////////////////////////////////
+private:
+
+    size_t index; ///< Index for keeing set of observers ordered. 
+
+    // NOT IMPLEMENTED ////////////////////////////////////////////////////////////////////////////
 private:
 
     ObserverSoln(const ObserverSoln&); ///< Not implemented.

@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -26,6 +26,7 @@
 #include "pylith/problems/Physics.hh" // USES Physics
 
 #include "pylith/utils/EventLogger.hh" // USES EventLogger
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL_*
 
 #include <cassert> // USES assert()
@@ -38,8 +39,7 @@ pylith::feassemble::PhysicsImplementation::PhysicsImplementation(pylith::problem
     _auxiliaryField(NULL),
     _derivedField(NULL),
     _observers(NULL),
-    _logger(NULL)
-{}
+    _logger(NULL) {}
 
 
 // ------------------------------------------------------------------------------------------------
@@ -62,6 +62,24 @@ pylith::feassemble::PhysicsImplementation::deallocate(void) {
 
     PYLITH_METHOD_END;
 } // deallocate
+
+
+// ------------------------------------------------------------------------------------------------
+// Get name of label marking material.
+const char*
+pylith::feassemble::PhysicsImplementation::getPhysicsLabelName(void) const {
+    assert(_physics);
+    return _physics->getLabelName();
+} // getPhysicaLabelName
+
+
+// ------------------------------------------------------------------------------------------------
+// Get value of label marking material.
+int
+pylith::feassemble::PhysicsImplementation::getPhysicsLabelValue(void) const {
+    assert(_physics);
+    return _physics->getLabelValue();
+} // getPhysicsLabelValue
 
 
 // ------------------------------------------------------------------------------------------------

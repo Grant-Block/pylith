@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2015 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -31,19 +31,19 @@
 
 #include <cassert>
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Default constructor.
 pylith::faults::KinSrcAuxiliaryFactory::KinSrcAuxiliaryFactory(void) {
     GenericComponent::setName("kinsrcauxiliaryfactory");
 } // constructor
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Destructor.
 pylith::faults::KinSrcAuxiliaryFactory::~KinSrcAuxiliaryFactory(void) {}
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add slip initiation time (relative to origin time) subfield to auxiliary field.
 void
 pylith::faults::KinSrcAuxiliaryFactory::addInitiationTime(void) {
@@ -70,8 +70,8 @@ pylith::faults::KinSrcAuxiliaryFactory::addInitiationTime(void) {
 } // addInitiationTime
 
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Add riseTime subfield to auxiliary field.
+// ------------------------------------------------------------------------------------------------
+// Add rise time subfield to auxiliary field.
 void
 pylith::faults::KinSrcAuxiliaryFactory::addRiseTime(void) {
     PYLITH_METHOD_BEGIN;
@@ -97,7 +97,34 @@ pylith::faults::KinSrcAuxiliaryFactory::addRiseTime(void) {
 } // addRiseTime
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// Add impulse duration subfield to auxiliary field.
+void
+pylith::faults::KinSrcAuxiliaryFactory::addImpulseDuration(void) {
+    PYLITH_METHOD_BEGIN;
+    PYLITH_JOURNAL_DEBUG("addImpulseDuration(void)");
+
+    const char* subfieldName = "impulse_duration";
+    const PylithReal timeScale = _normalizer->getTimeScale();
+
+    pylith::topology::Field::Description description;
+    description.label = subfieldName;
+    description.alias = subfieldName;
+    description.vectorFieldType = pylith::topology::Field::SCALAR;
+    description.numComponents = 1;
+    description.componentNames.resize(1);
+    description.componentNames[0] = subfieldName;
+    description.scale = timeScale;
+    description.validator = NULL;
+
+    _field->subfieldAdd(description, getSubfieldDiscretization(subfieldName));
+    this->setSubfieldQuery(subfieldName);
+
+    PYLITH_METHOD_END;
+} // addImpulseDuration
+
+
+// ------------------------------------------------------------------------------------------------
 // Add final slip subfield to auxiliary field.
 void
 pylith::faults::KinSrcAuxiliaryFactory::addFinalSlip(void) {
@@ -128,7 +155,7 @@ pylith::faults::KinSrcAuxiliaryFactory::addFinalSlip(void) {
 } // addFinalSlip
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add slip rate subfield to auxiliary field.
 void
 pylith::faults::KinSrcAuxiliaryFactory::addSlipRate(void) {
@@ -160,7 +187,7 @@ pylith::faults::KinSrcAuxiliaryFactory::addSlipRate(void) {
 } // addSlipRate
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // Add time history value subfield to auxiliary field.
 void
 pylith::faults::KinSrcAuxiliaryFactory::addTimeHistoryValue(void) {
@@ -185,7 +212,7 @@ pylith::faults::KinSrcAuxiliaryFactory::addTimeHistoryValue(void) {
 } // addTimeHistoryValue
 
 
-// ---------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 void
 pylith::faults::KinSrcAuxiliaryFactory::updateTimeHistoryValue(pylith::topology::Field* auxiliaryField,
                                                                const PylithReal t,
@@ -203,15 +230,15 @@ pylith::faults::KinSrcAuxiliaryFactory::updateTimeHistoryValue(pylith::topology:
 
     PetscErrorCode err = 0;
 
-    PetscSection auxiliaryFieldSection = auxiliaryField->localSection();assert(auxiliaryFieldSection);
+    PetscSection auxiliaryFieldSection = auxiliaryField->getLocalSection();assert(auxiliaryFieldSection);
     PetscInt pStart = 0, pEnd = 0;
     err = PetscSectionGetChart(auxiliaryFieldSection, &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
     pylith::topology::VecVisitorMesh auxiliaryFieldVisitor(*auxiliaryField);
     PetscScalar* auxiliaryFieldArray = auxiliaryFieldVisitor.localArray();assert(auxiliaryFieldArray);
 
     // Compute offset of time history subfields in auxiliary field.
-    const PetscInt i_startTime = auxiliaryField->subfieldInfo("initiation_time").index;
-    const PetscInt i_value = auxiliaryField->subfieldInfo("time_history_value").index;
+    const PetscInt i_startTime = auxiliaryField->getSubfieldInfo("initiation_time").index;
+    const PetscInt i_value = auxiliaryField->getSubfieldInfo("time_history_value").index;
 
     // Loop over all points in section.
     for (PetscInt p = pStart; p < pEnd; ++p) {
@@ -230,7 +257,7 @@ pylith::faults::KinSrcAuxiliaryFactory::updateTimeHistoryValue(pylith::topology:
             const int err = dbTimeHistory->query(&value, tDim);
             if (err) {
                 std::ostringstream msg;
-                msg << "Error querying for time '" << tDim << "' in time history database '" << dbTimeHistory->getLabel() << "'.";
+                msg << "Error querying for time '" << tDim << "' in time history database '" << dbTimeHistory->getDescription() << "'.";
                 throw std::runtime_error(msg.str());
             } // if
         } // if

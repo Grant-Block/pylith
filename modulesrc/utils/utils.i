@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -23,6 +23,7 @@
 %{
 #include "pylith/utils/EventLogger.hh"
 #include "pylith/utils/PyreComponent.hh"
+#include "pylith/utils/PetscOptions.hh"
 #include "pylith/utils/PylithVersion.hh"
 #include "pylith/utils/PetscVersion.hh"
 #include "pylith/utils/DependenciesVersion.hh"
@@ -58,6 +59,7 @@ import_array();
 %include "pylith_general.i"
 %include "EventLogger.i"
 %include "PyreComponent.i"
+%include "PetscOptions.i"
 %include "PylithVersion.i"
 %include "PetscVersion.i"
 %include "DependenciesVersion.i"

@@ -4,14 +4,14 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
 #
@@ -26,8 +26,7 @@ SUBDIRS = \
 	bc \
 	faults \
 	friction \
-	fekernels \
-	testing
+	fekernels
 
 
 lib_LTLIBRARIES = libpylith.la
@@ -38,10 +37,12 @@ libpylith_la_SOURCES = \
 	bc/DirichletTimeDependent.cc \
 	bc/DirichletUserFn.cc \
 	bc/NeumannTimeDependent.cc \
+	bc/NeumannUserFn.cc \
 	bc/AbsorbingDampers.cc \
 	bc/AbsorbingDampersAuxiliaryFactory.cc \
 	faults/FaultCohesive.cc \
 	faults/FaultCohesiveKin.cc \
+	faults/FaultCohesiveImpulses.cc \
 	faults/AuxiliaryFactoryKinematic.cc \
 	faults/KinSrc.cc \
 	faults/KinSrcStep.cc \
@@ -52,33 +53,26 @@ libpylith_la_SOURCES = \
 	faults/KinSrcTimeHistory.cc \
 	faults/KinSrcAuxiliaryFactory.cc \
 	faults/TopologyOps.cc \
+	faults/FaultOps.cc \
 	feassemble/PhysicsImplementation.cc \
 	feassemble/Integrator.cc \
 	feassemble/IntegratorDomain.cc \
 	feassemble/IntegratorBoundary.cc \
 	feassemble/IntegratorInterface.cc \
+	feassemble/IntegrationData.cc \
+	feassemble/InterfacePatches.cc \
 	feassemble/UpdateStateVars.cc \
+	feassemble/JacobianValues.cc \
 	feassemble/Constraint.cc \
 	feassemble/ConstraintSpatialDB.cc \
 	feassemble/ConstraintUserFn.cc \
 	feassemble/ConstraintSimple.cc \
 	feassemble/AuxiliaryFactory.cc \
-	fekernels/Elasticity.cc \
-	fekernels/IsotropicLinearElasticity.cc \
-	fekernels/Viscoelasticity.cc \
-	fekernels/IsotropicLinearMaxwell.cc \
+	fekernels/Tensor.cc \
 	fekernels/IsotropicLinearGenMaxwell.cc \
 	fekernels/IsotropicPowerLaw.cc \
-	fekernels/IncompressibleElasticity.cc \
-	fekernels/IsotropicLinearIncompElasticity.cc \
 	fekernels/Poroelasticity.cc \
 	fekernels/IsotropicLinearPoroelasticity.cc \
-	fekernels/Solution.cc \
-	fekernels/DispVel.cc \
-	fekernels/TimeDependentFn.cc \
-	fekernels/NeumannTimeDependent.cc \
-	fekernels/AbsorbingDampers.cc \
-	fekernels/FaultCohesiveKin.cc \
 	materials/Material.cc \
 	materials/Elasticity.cc \
 	materials/RheologyElasticity.cc \
@@ -88,16 +82,16 @@ libpylith_la_SOURCES = \
 	materials/IsotropicLinearMaxwell.cc \
 	materials/IsotropicLinearGenMaxwell.cc \
 	materials/IsotropicPowerLaw.cc \
-	materials/AuxiliaryFactoryElastic.cc \
-	materials/AuxiliaryFactoryViscoelastic.cc \
-	materials/AuxiliaryFactoryPoroelasticity.cc \
-	materials/AuxiliaryFactoryPoroelastic.cc \
 	materials/IncompressibleElasticity.cc \
 	materials/RheologyIncompressibleElasticity.cc \
 	materials/IsotropicLinearIncompElasticity.cc \
+	materials/AuxiliaryFactoryElastic.cc \
+	materials/AuxiliaryFactoryViscoelastic.cc \
 	materials/Poroelasticity.cc \
 	materials/RheologyPoroelasticity.cc \
 	materials/IsotropicLinearPoroelasticity.cc \
+	materials/AuxiliaryFactoryPoroelasticity.cc \
+	materials/AuxiliaryFactoryPoroelastic.cc \
 	materials/Query.cc \
 	meshio/BinaryIO.cc \
 	meshio/GMVFile.cc \
@@ -106,6 +100,7 @@ libpylith_la_SOURCES = \
 	meshio/MeshBuilder.cc \
 	meshio/MeshIO.cc \
 	meshio/MeshIOAscii.cc \
+	meshio/MeshIOPetsc.cc \
 	meshio/MeshIOLagrit.cc \
 	meshio/PsetFile.cc \
 	meshio/PsetFileAscii.cc \
@@ -128,6 +123,7 @@ libpylith_la_SOURCES = \
 	meshio/OutputTriggerTime.cc \
 	problems/Problem.cc \
 	problems/TimeDependent.cc \
+	problems/GreensFns.cc \
 	problems/SolutionFactory.cc \
 	problems/ObserverSoln.cc \
 	problems/ObserversSoln.cc \
@@ -139,6 +135,7 @@ libpylith_la_SOURCES = \
 	problems/InitialConditionPatch.cc \
 	problems/ProgressMonitor.cc \
 	problems/ProgressMonitorTime.cc \
+	problems/ProgressMonitorStep.cc \
 	topology/Mesh.cc \
 	topology/MeshOps.cc \
 	topology/FieldBase.cc \
@@ -152,13 +149,15 @@ libpylith_la_SOURCES = \
 	utils/EventLogger.cc \
 	utils/PyreComponent.cc \
 	utils/GenericComponent.cc \
+	utils/PetscOptions.cc \
 	utils/PylithVersion.cc \
 	utils/PetscVersion.cc \
 	utils/DependenciesVersion.cc \
 	utils/TestArray.cc
 
 
-libpylith_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LA_LDFLAGS)
+
+libpylith_la_LDFLAGS = $(AM_LDFLAGS) $(PYTHON_LDFLAGS) $(PYTHON_LA_LDFLAGS)
 libpylith_la_LIBADD = \
 	-lspatialdata \
 	-lhdf5 \
@@ -176,23 +175,6 @@ if ENABLE_CUBIT
 	meshio/MeshIOCubit.cc
   libpylith_la_LIBADD += -lnetcdf
 endif
-
-if ENABLE_TESTING
-libpylith_la_SOURCES += \
-	testing/StubMethodTracker.cc \
-	testing/FieldTester.cc \
-	testing/PhysicsStub.cc \
-	testing/PhysicsImplementationStub.cc \
-	testing/ProgressMonitorStub.cc \
-	testing/ObserverPhysicsStub.cc \
-	testing/ObserverSolnStub.cc \
-	testing/FaultCohesiveStub.cc \
-	testing/MMSTest.cc \
-	testing/TestDriver.cc
-
-libpylith_la_LIBADD += -lcppunit
-endif
-
 
 
 # End of file

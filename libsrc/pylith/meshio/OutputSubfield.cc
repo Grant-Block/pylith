@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -35,7 +35,9 @@
 pylith::meshio::OutputSubfield::OutputSubfield(void) :
     _dm(NULL),
     _vector(NULL),
-    _fn(pylith::fekernels::Solution::passThruSubfield) {}
+    _fn(pylith::fekernels::Solution::passThruSubfield),
+    _label(NULL),
+    _labelValue(0) {}
 
 
 // ------------------------------------------------------------------------------------------------
@@ -52,6 +54,8 @@ pylith::meshio::OutputSubfield::deallocate(void) {
     PetscErrorCode err;
     err = DMDestroy(&_dm);PYLITH_CHECK_ERROR(err);
     err = VecDestroy(&_vector);PYLITH_CHECK_ERROR(err);
+
+    _label = NULL; // Destroyed by DMDestroy()
 } // deallocate
 
 
@@ -66,16 +70,16 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
 
     OutputSubfield* subfield = new OutputSubfield();assert(subfield);
 
-    const pylith::topology::Field::SubfieldInfo& info = field.subfieldInfo(name);
+    const pylith::topology::Field::SubfieldInfo& info = field.getSubfieldInfo(name);
     subfield->_subfieldIndex = info.index;
     subfield->_description = info.description;
     subfield->_discretization = info.fe;
-    subfield->_discretization.dimension = mesh.dimension();
+    subfield->_discretization.dimension = mesh.getDimension();
     // Basis order of output should be less than or equai to the basis order of the computed field.
     subfield->_discretization.basisOrder = std::min(basisOrder, info.fe.basisOrder);
 
     PetscErrorCode err;
-    err = DMClone(mesh.dmMesh(), &subfield->_dm);PYLITH_CHECK_ERROR(err);
+    err = DMClone(mesh.getDM(), &subfield->_dm);PYLITH_CHECK_ERROR(err);
     err = PetscObjectSetName((PetscObject)subfield->_dm, name);PYLITH_CHECK_ERROR(err);
 
     PetscFE fe = pylith::topology::FieldOps::createFE(subfield->_discretization, subfield->_dm,
@@ -103,20 +107,20 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
 
     OutputSubfield* subfield = new OutputSubfield();assert(subfield);
 
-    const pylith::topology::Field::SubfieldInfo& info = field.subfieldInfo(name);
+    const pylith::topology::Field::SubfieldInfo& info = field.getSubfieldInfo(name);
     subfield->_subfieldIndex = info.index;
     subfield->_description = info.description;
 
     PetscErrorCode err;
-    err = DMClone(mesh.dmMesh(), &subfield->_dm);PYLITH_CHECK_ERROR(err);
+    err = DMClone(mesh.getDM(), &subfield->_dm);PYLITH_CHECK_ERROR(err);
     err = PetscObjectSetName((PetscObject)subfield->_dm, name);PYLITH_CHECK_ERROR(err);
 
     pylith::topology::VecVisitorMesh fieldVisitor(field, name);
 
     PetscSection subfieldSection = NULL;
     PetscInt pStart = 0, pEnd = 0;
-    err = PetscSectionClone(fieldVisitor.localSection(), &subfieldSection);PYLITH_CHECK_ERROR(err);
-    err = PetscSectionGetChart(fieldVisitor.localSection(), &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
+    err = PetscSectionClone(fieldVisitor.selectedSection(), &subfieldSection);PYLITH_CHECK_ERROR(err);
+    err = PetscSectionGetChart(fieldVisitor.selectedSection(), &pStart, &pEnd);PYLITH_CHECK_ERROR(err);
     for (PetscInt point = pStart, offset = 0; point < pEnd; ++point) {
         const PetscInt numDof = fieldVisitor.sectionDof(point);
         err = PetscSectionSetOffset(subfieldSection, point, offset);PYLITH_CHECK_ERROR(err);
@@ -129,6 +133,26 @@ pylith::meshio::OutputSubfield::create(const pylith::topology::Field& field,
     err = PetscObjectSetName((PetscObject)subfield->_vector, name);PYLITH_CHECK_ERROR(err);
 
     PYLITH_METHOD_RETURN(subfield);
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Set label name and value.
+void
+pylith::meshio::OutputSubfield::setLabel(const char* name,
+                                         const int value) {
+    PYLITH_METHOD_BEGIN;
+
+    if (_label) {
+        PYLITH_METHOD_END;
+    } // if
+    PetscErrorCode err;
+    err = DMGetLabel(_dm, name, &_label);PYLITH_CHECK_ERROR(err);
+    err = DMPlexLabelComplete(_dm, _label);
+
+    _labelValue = value;
+
+    PYLITH_METHOD_END;
 }
 
 
@@ -174,7 +198,27 @@ pylith::meshio::OutputSubfield::project(const PetscVec& fieldVector) {
 
     PetscErrorCode err;
     const PetscReal t = PetscReal(_subfieldIndex) + 0.01; // :KLUDGE: Easiest way to get subfield to extract into fn.
+
     err = DMProjectField(_dm, t, fieldVector, &_fn, INSERT_VALUES, _vector);PYLITH_CHECK_ERROR(err);
+    err = VecScale(_vector, _description.scale);PYLITH_CHECK_ERROR(err);
+
+    PYLITH_METHOD_END;
+}
+
+
+// ------------------------------------------------------------------------------------------------
+// Extract subfield data from global PETSc vector with subfields.
+void
+pylith::meshio::OutputSubfield::projectWithLabel(const PetscVec& fieldVector) {
+    PYLITH_METHOD_BEGIN;
+    assert(fieldVector);
+    assert(_vector);
+    assert(_label);
+
+    PetscErrorCode err;
+    const PetscReal t = PetscReal(_subfieldIndex) + 0.01; // :KLUDGE: Easiest way to get subfield to extract into fn.
+
+    err = DMProjectFieldLabel(_dm, t, _label, 1, &_labelValue, PETSC_DETERMINE, NULL, fieldVector, &_fn, INSERT_VALUES, _vector);PYLITH_CHECK_ERROR(err);
     err = VecScale(_vector, _description.scale);PYLITH_CHECK_ERROR(err);
 
     PYLITH_METHOD_END;
@@ -191,7 +235,7 @@ pylith::meshio::OutputSubfield::extractSubfield(const pylith::topology::Field& f
     PetscErrorCode err;
     PetscSection subfieldSection = NULL;
     PetscInt storageSize = 0;
-    err = PetscSectionGetField(field.localSection(), subfieldIndex, &subfieldSection);PYLITH_CHECK_ERROR(err);
+    err = PetscSectionGetField(field.getLocalSection(), subfieldIndex, &subfieldSection);PYLITH_CHECK_ERROR(err);
     err = PetscSectionGetStorageSize(subfieldSection, &storageSize);PYLITH_CHECK_ERROR(err);
 
     PetscVec subfieldVector = this->getVector();

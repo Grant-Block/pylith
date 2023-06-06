@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -21,12 +21,12 @@
 #include "TestRefineUniform.hh" // Implementation of class methods
 
 #include "pylith/topology/RefineUniform.hh" // USES RefineUniform
+#include "tests/src/FaultCohesiveStub.hh" // USES FaultCohesiveStub
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/Stratum.hh" // USES Stratum
 #include "pylith/topology/CoordsVisitor.hh" // USES CoordsVisitor
 #include "pylith/meshio/MeshIOAscii.hh" // USES MeshIOAscii
-#include "pylith/testing/FaultCohesiveStub.hh" // USES FaultCohesiveStub
 
 #include "pylith/utils/array.hh" // USES int_array
 
@@ -64,9 +64,9 @@ pylith::topology::TestRefineUniform::testRefine(void) {
     refiner.refine(&newMesh, mesh, _data->refineLevel);
 
     // Check mesh dimension
-    CPPUNIT_ASSERT_EQUAL(_data->cellDim, newMesh.dimension());
+    CPPUNIT_ASSERT_EQUAL(_data->cellDim, newMesh.getDimension());
 
-    const PetscDM& dmMesh = newMesh.dmMesh();CPPUNIT_ASSERT(dmMesh);
+    const PetscDM& dmMesh = newMesh.getDM();CPPUNIT_ASSERT(dmMesh);
 
     // Check vertices
     pylith::topology::Stratum verticesStratum(dmMesh, topology::Stratum::DEPTH, 0);
@@ -130,7 +130,7 @@ pylith::topology::TestRefineUniform::testRefine(void) {
     PetscInt matId = 0;
     PetscInt matIdSum = 0; // Use sum of material ids as simple checksum.
     for (PetscInt c = cStart; c < cEnd; ++c) {
-        err = DMGetLabelValue(dmMesh, "material-id", c, &matId);CPPUNIT_ASSERT(!err);
+        err = DMGetLabelValue(dmMesh, pylith::topology::Mesh::cells_label_name, c, &matId);CPPUNIT_ASSERT(!err);
         matIdSum += matId;
     } // for
     CPPUNIT_ASSERT_EQUAL(_data->matIdSum, matIdSum);
@@ -200,21 +200,21 @@ pylith::topology::TestRefineUniform::_initializeMesh(Mesh* const mesh) {
     CPPUNIT_ASSERT(mesh);
 
     pylith::meshio::MeshIOAscii iohandler;
-    iohandler.filename(_data->filename);
+    iohandler.setFilename(_data->filename);
     iohandler.read(mesh);
 
     // Adjust topology if necessary.
     if (_data->faultA) {
         faults::FaultCohesiveStub faultA;
-        faultA.setInterfaceId(100);
-        faultA.setSurfaceMarkerLabel(_data->faultA);
+        faultA.setCohesiveLabelValue(100);
+        faultA.setSurfaceLabelName(_data->faultA);
         faultA.adjustTopology(mesh);
     } // if
 
     if (_data->faultB) {
         faults::FaultCohesiveStub faultB;
-        faultB.setInterfaceId(101);
-        faultB.setSurfaceMarkerLabel(_data->faultB);
+        faultB.setCohesiveLabelValue(101);
+        faultB.setSurfaceLabelName(_data->faultB);
         faultB.adjustTopology(mesh);
     } // if
 

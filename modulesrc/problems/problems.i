@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2017 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ======================================================================
 //
@@ -23,6 +23,7 @@
 %{
 #include "pylith/problems/Problem.hh"
 #include "pylith/problems/TimeDependent.hh"
+#include "pylith/problems/GreensFns.hh"
 #include "pylith/problems/Physics.hh"
 #include "pylith/problems/ObserverSoln.hh"
 #include "pylith/problems/ObserverPhysics.hh"
@@ -31,6 +32,7 @@
 #include "pylith/problems/InitialConditionPatch.hh"
 #include "pylith/problems/ProgressMonitor.hh"
 #include "pylith/problems/ProgressMonitorTime.hh"
+#include "pylith/problems/ProgressMonitorStep.hh"
 %}
 
 %include "exception.i"
@@ -62,6 +64,7 @@
 %include "../topology/FieldBase.i"
 %include "Problem.i"
 %include "TimeDependent.i"
+%include "GreensFns.i"
 %include "Physics.i"
 %include "ObserverSoln.i"
 %include "ObserverPhysics.i"
@@ -70,5 +73,6 @@
 %include "InitialConditionPatch.i"
 %include "ProgressMonitor.i"
 %include "ProgressMonitorTime.i"
+%include "ProgressMonitorStep.i"
 
 // End of file

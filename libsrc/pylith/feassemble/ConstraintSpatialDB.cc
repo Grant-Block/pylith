@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -22,10 +22,12 @@
 
 #include "pylith/topology/Mesh.hh" // USES Mesh
 #include "pylith/topology/Field.hh" // USES Field
+#include "pylith/feassemble/IntegrationData.hh" // USES IntegrationData
 #include "pylith/problems/ObserversPhysics.hh" // USES ObserversPhysics
 #include "pylith/problems/Physics.hh" // USES Physics
 
 #include "pylith/utils/EventLogger.hh" // USES EventLogger
+#include "pylith/utils/error.hh" // USES PYLITH_METHOD_*
 #include "pylith/utils/journals.hh" // USES PYLITH_JOURNAL_*
 
 #include <cassert> // USES assert()
@@ -60,7 +62,7 @@ pylith::feassemble::ConstraintSpatialDB::setKernelConstraint(const PetscBdPointF
 void
 pylith::feassemble::ConstraintSpatialDB::initialize(const pylith::topology::Field& solution) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_JOURNAL_DEBUG("intialize(solution="<<solution.getLabel()<<")");
+    PYLITH_JOURNAL_DEBUG(_labelName<<"="<<_labelValue<<" intialize(solution="<<solution.getLabel()<<")");
 
     assert(_physics);
 
@@ -78,27 +80,26 @@ pylith::feassemble::ConstraintSpatialDB::initialize(const pylith::topology::Fiel
     // the correct one.
     PetscDS prob = NULL;
     PetscDMLabel label = NULL;
-    PetscDM dmSoln = solution.dmMesh();assert(dmSoln);
+    PetscDM dmSoln = solution.getDM();assert(dmSoln);
     PetscErrorCode err = DMGetDS(dmSoln, &prob);PYLITH_CHECK_ERROR(err);assert(prob);
 
     void* context = NULL;
-    const int labelId = 1;
     const PylithInt numConstrained = _constrainedDOF.size();
-    const PetscInt i_field = solution.subfieldInfo(_subfieldName.c_str()).index;
-    err = DMGetLabel(dmSoln, _constraintLabel.c_str(), &label);PYLITH_CHECK_ERROR(err);
-    err = PetscDSAddBoundary(prob, DM_BC_ESSENTIAL_BD_FIELD, _constraintLabel.c_str(), label, 1, &labelId, i_field,
-                             numConstrained, &_constrainedDOF[0], (void (*)())_kernelConstraint, NULL, context, NULL);PYLITH_CHECK_ERROR(err);
+    const PetscInt i_field = solution.getSubfieldInfo(_subfieldName.c_str()).index;
+    err = DMGetLabel(dmSoln, _labelName.c_str(), &label);PYLITH_CHECK_ERROR(err);
+    err = PetscDSAddBoundary(prob, DM_BC_ESSENTIAL_BD_FIELD, _labelName.c_str(), label, 1, &_labelValue, i_field,
+                             numConstrained, &_constrainedDOF[0], (void (*)()) _kernelConstraint, NULL, context, NULL);PYLITH_CHECK_ERROR(err);
 
     PYLITH_METHOD_END;
 } // initialize
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Update auxiliary field values to current time.
+// Set auxiliary field values for current time.
 void
-pylith::feassemble::ConstraintSpatialDB::updateState(const double t) {
+pylith::feassemble::ConstraintSpatialDB::setState(const double t) {
     PYLITH_METHOD_BEGIN;
-    PYLITH_JOURNAL_DEBUG("updateState(t="<<t<<")");
+    PYLITH_JOURNAL_DEBUG(_labelName<<"="<<_labelValue<<" setState(t="<<t<<")");
 
     assert(_physics);
     _physics->updateAuxiliaryField(_auxiliaryField, t);
@@ -113,41 +114,43 @@ pylith::feassemble::ConstraintSpatialDB::updateState(const double t) {
     } // if
 
     PYLITH_METHOD_END;
-} // updateState
+} // setState
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Set constrained values in solution field.
 void
-pylith::feassemble::ConstraintSpatialDB::setSolution(pylith::topology::Field* solution,
-                                                     const double t) {
+pylith::feassemble::ConstraintSpatialDB::setSolution(pylith::feassemble::IntegrationData* integrationData) {
+    assert(integrationData);
     PYLITH_METHOD_BEGIN;
-    PYLITH_JOURNAL_DEBUG("setSolution(solution="<<solution->getLabel()<<", t="<<t<<")");
+    PYLITH_JOURNAL_DEBUG(_labelName<<"="<<_labelValue<<" setSolution(integrationData="<<integrationData->str()<<")");
 
-    assert(solution);
     assert(_auxiliaryField);
     assert(_physics);
 
-    PetscErrorCode err = 0;
-    PetscDM dmSoln = solution->dmMesh();
+    const pylith::topology::Field* solution = integrationData->getField(pylith::feassemble::IntegrationData::solution);
+    assert(solution);
+    const PylithReal t = integrationData->getScalar(pylith::feassemble::IntegrationData::time);
 
-    // Set auxiliary data
-    PetscDMLabel dmLabel = NULL;
-    PetscInt labelValue = 0;
-    err = DMSetAuxiliaryVec(dmSoln, dmLabel, labelValue, _auxiliaryField->localVector());PYLITH_CHECK_ERROR(err);
+    PetscErrorCode err = 0;
+    PetscDM dmSoln = solution->getDM();
 
     // Get label for constraint.
-    err = DMGetLabel(dmSoln, _constraintLabel.c_str(), &dmLabel);PYLITH_CHECK_ERROR(err);
+    PetscDMLabel dmLabel = NULL;
+    err = DMGetLabel(dmSoln, _labelName.c_str(), &dmLabel);PYLITH_CHECK_ERROR(err);
+
+    // Set auxiliary data
+    const PetscInt part = 0;
+    err = DMSetAuxiliaryVec(dmSoln, dmLabel, _labelValue, part, _auxiliaryField->getLocalVector());PYLITH_CHECK_ERROR(err);
 
     void* context = NULL;
-    const int labelId = 1;
-    const int fieldIndex = solution->subfieldInfo(_subfieldName.c_str()).index;
+    const int fieldIndex = solution->getSubfieldInfo(_subfieldName.c_str()).index;
     const PylithInt numConstrained = _constrainedDOF.size();
-    assert(solution->localVector());
+    assert(solution->getLocalVector());
     err = DMPlexLabelAddFaceCells(dmSoln, dmLabel);PYLITH_CHECK_ERROR(err);
-    err = DMPlexInsertBoundaryValuesEssentialBdField(dmSoln, t, solution->localVector(), fieldIndex,
-                                                     numConstrained, &_constrainedDOF[0], dmLabel, 1, &labelId,
-                                                     _kernelConstraint, context, solution->localVector());PYLITH_CHECK_ERROR(err);
+    err = DMPlexInsertBoundaryValuesEssentialBdField(dmSoln, t, solution->getLocalVector(), fieldIndex,
+                                                     numConstrained, &_constrainedDOF[0], dmLabel, 1, &_labelValue,
+                                                     _kernelConstraint, context, solution->getLocalVector());PYLITH_CHECK_ERROR(err);
     err = DMPlexLabelClearCells(dmSoln, dmLabel);PYLITH_CHECK_ERROR(err);
 
     pythia::journal::debug_t debug(GenericComponent::getName());
@@ -175,7 +178,7 @@ pylith::feassemble::ConstraintSpatialDB::_setKernelConstants(const pylith::topol
     const pylith::real_array& constants = _physics->getKernelConstants(dt);
 
     PetscDS prob = NULL;
-    PetscDM dmSoln = solution.dmMesh();assert(dmSoln);
+    PetscDM dmSoln = solution.getDM();assert(dmSoln);
 
     // :KLUDGE: Potentially we may have multiple PetscDS objects. This assumes that the first one (with a NULL label) is
     // the correct one.

@@ -4,26 +4,31 @@
 #
 # Brad T. Aagaard, U.S. Geological Survey
 # Charles A. Williams, GNS Science
-# Matthew G. Knepley, University of Chicago
+# Matthew G. Knepley, University at Buffalo
 #
 # This code was developed as part of the Computational Infrastructure
 # for Geodynamics (http://geodynamics.org).
 #
-# Copyright (c) 2010-2017 University of California, Davis
+# Copyright (c) 2010-2022 University of California, Davis
 #
-# See COPYING for license information.
+# See LICENSE.md for license information.
 #
 # ----------------------------------------------------------------------
-#
 
 dist_noinst_DATA = \
 	README.md
 
 SUBDIRS = \
-	2d \
-	3d \
-	meshing \
-	troubleshooting
+	barwaves-2d \
+	box-2d \
+	box-3d \
+	meshing-cubit \
+	magma-2d \
+	reverse-2d \
+	strikeslip-2d \
+	subduction-2d \
+	subduction-3d \
+	troubleshooting-2d
 
 
 # End of file 

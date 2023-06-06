@@ -4,14 +4,14 @@
 //
 // Brad T. Aagaard, U.S. Geological Survey
 // Charles A. Williams, GNS Science
-// Matthew G. Knepley, University of Chicago
+// Matthew G. Knepley, University at Buffalo
 //
 // This code was developed as part of the Computational Infrastructure
 // for Geodynamics (http://geodynamics.org).
 //
-// Copyright (c) 2010-2016 University of California, Davis
+// Copyright (c) 2010-2022 University of California, Davis
 //
-// See COPYING for license information.
+// See LICENSE.md for license information.
 //
 // ----------------------------------------------------------------------
 //
@@ -23,7 +23,7 @@
 
 namespace pylith {
     namespace materials {
-        class Material : public pylith::problems::Physics {
+        class Material: public pylith::problems::Physics {
             // PUBLIC METHODS //////////////////////////////////////////////////////////////////////////////////////////
 public:
 
@@ -40,29 +40,17 @@ public:
             virtual
             void deallocate(void);
 
-            /** Set value of label material-id used to identify material cells.
-             *
-             * @param value Material identifier
-             */
-            void setMaterialId(const int value);
-
-            /** Get value of label material-id used to identify material cells.
-             *
-             * @returns Material identifier
-             */
-            int getMaterialId(void) const;
-
             /** Set descriptive label for material.
              *
              * @param value Label of material.
              */
-            void setDescriptiveLabel(const char* value);
+            void setDescription(const char* value);
 
             /** Get descruptive label of material.
              *
              * @returns Label of material
              */
-            const char* getDescriptiveLabel(void) const;
+            const char* getDescription(void) const;
 
             /** Set gravity field.
              *
@@ -70,13 +58,23 @@ public:
              */
             void setGravityField(spatialdata::spatialdb::GravityField* const g);
 
-	    /** Create constraint and set kernels.
-	     *
-	     * @param[in] solution Solution field.
-	     * @returns Constraint if applicable, otherwise NULL.
-	     */
-	    virtual
-	    pylith::feassemble::Constraint* createConstraint(const pylith::topology::Field& solution);
+            /** Create constraint and set kernels.
+             *
+             * @param[in] solution Solution field.
+             * @returns Constraint if applicable, otherwise NULL.
+             */
+            virtual
+            std::vector < pylith::feassemble::Constraint* > createConstraints(const pylith::topology::Field& solution);
+
+            /** Get default PETSc solver options appropriate for material.
+             *
+             * @param[in] isParallel True if running in parallel, False if running in serial.
+             * @param[in] hasFault True if problem has fault, False otherwise.
+             * @returns PETSc solver options.
+             */
+            virtual
+            pylith::utils::PetscOptions* getSolverDefaults(const bool isParallel,
+                                                           const bool hasFault) const;
 
         }; // class Material
 
