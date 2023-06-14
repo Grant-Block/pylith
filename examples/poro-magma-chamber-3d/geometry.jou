@@ -1,0 +1,65 @@
+#-----------------------------------------------------------------------------
+# Spherical poroelastic magma chamber surrounded
+# by poroelastic mush zone with a lower porosity in 
+# an elastic half space
+#----------------------------------------------------------------------------
+
+${Units('si')}
+
+# Clear model
+undo off
+reset
+
+# Define variables for geometry
+
+# Domain
+
+${size_x = 20*km}
+${size_y = 20*km}
+${size_z = 20*km}
+
+# Magma Body
+
+${chamber_rad = 1*km}
+${mush_rad = 3*km}
+${chamber_center_depth = 5*km}
+
+
+# Create geometry
+
+# Make domain
+
+brick x {size_x} y {size_y} z {size_z}
+move volume 1 x 0 y 0 z {-size_z/2.0}
+
+# Make mush zone
+
+create sphere radius {mush_rad}
+move volume 2 x 0 y 0 z {-chamber_center_depth} 
+
+subtract volume 2 from 1#make a mush-zone sized hole in the domain
+compress all
+
+create sphere radius {mush_rad}
+move volume 2 x 0 y 0 z {-chamber_center_depth} # remake the mush zone and put it in the hole
+compress all
+imprint all
+merge all
+
+# Make magma chamber inside of mush zone
+
+create sphere radius {chamber_rad}
+move volume 3 x 0 y 0 z {-chamber_center_depth}
+
+subtract volume 3 from 2 #make magma chamber sized hole in mush zone
+compress all
+
+create sphere radius {chamber_rad}
+move volume 3 x 0 y 0 z {-chamber_center_depth} #remake the magma chamber and put it in the hole
+compress all
+imprint all
+merge all
+
+
+
+
